@@ -18,6 +18,7 @@ import {
 export const SplashDemoPage: React.FC = () => {
   const navigate = useNavigate();
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [splashSize, setSplashSize] = useState<'compact' | 'medium' | 'large'>('compact');
   const [playCount, setPlayCount] = useState(1);
   const [showFullSplash, setShowFullSplash] = useState(true);
 
@@ -28,8 +29,9 @@ export const SplashDemoPage: React.FC = () => {
       {/* Full-Screen Splash Screen Overlay */}
       {showFullSplash && (
         <SewDeskSplashScreen
-          key={`splash-${playCount}-${theme}`}
+          key={`splash-${playCount}-${theme}-${splashSize}`}
           theme={theme}
+          size={splashSize}
           autoDismiss={false} // Demo mode: lets user observe or manually dismiss
           onComplete={() => setShowFullSplash(false)}
         />
@@ -54,7 +56,44 @@ export const SplashDemoPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {/* Size Selector */}
+            <div className="flex items-center rounded-lg border border-neutral-200 dark:border-neutral-800 p-0.5 bg-neutral-100 dark:bg-neutral-900 text-xs">
+              <button
+                onClick={() => setSplashSize('compact')}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  splashSize === 'compact'
+                    ? 'bg-white dark:bg-neutral-800 text-black dark:text-white shadow-xs'
+                    : 'text-neutral-500 hover:text-black dark:hover:text-white'
+                }`}
+                title="Compact (4x Smaller — Default)"
+              >
+                Compact (4x)
+              </button>
+              <button
+                onClick={() => setSplashSize('medium')}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  splashSize === 'medium'
+                    ? 'bg-white dark:bg-neutral-800 text-black dark:text-white shadow-xs'
+                    : 'text-neutral-500 hover:text-black dark:hover:text-white'
+                }`}
+                title="Medium (2x Smaller)"
+              >
+                Medium (2x)
+              </button>
+              <button
+                onClick={() => setSplashSize('large')}
+                className={`px-2.5 py-1 rounded-md font-medium transition-colors ${
+                  splashSize === 'large'
+                    ? 'bg-white dark:bg-neutral-800 text-black dark:text-white shadow-xs'
+                    : 'text-neutral-500 hover:text-black dark:hover:text-white'
+                }`}
+                title="Large (Original)"
+              >
+                Large
+              </button>
+            </div>
+
             <Button
               variant="outline"
               size="sm"
@@ -62,7 +101,7 @@ export const SplashDemoPage: React.FC = () => {
               className="gap-1.5"
             >
               {isDark ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-              <span>{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+              <span>{isDark ? 'Light' : 'Dark'}</span>
             </Button>
             <Button
               size="sm"
@@ -73,7 +112,7 @@ export const SplashDemoPage: React.FC = () => {
               className="gap-1.5 bg-black text-white dark:bg-white dark:text-black hover:opacity-90"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              <span>Launch Splash Animation</span>
+              <span>Launch Splash</span>
             </Button>
             <Button
               variant="outline"
@@ -81,7 +120,7 @@ export const SplashDemoPage: React.FC = () => {
               onClick={() => navigate('/app/dashboard')}
               className="gap-1.5"
             >
-              <span>Enter Workspace</span>
+              <span>Workspace</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
           </div>

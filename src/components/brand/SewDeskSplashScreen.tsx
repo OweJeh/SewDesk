@@ -12,6 +12,7 @@ export interface SewDeskSplashScreenProps {
   theme?: 'light' | 'dark';
   enableSound?: boolean;
   className?: string;
+  size?: 'compact' | 'medium' | 'large' | number;
 }
 
 const STORAGE_KEY = 'sewdesk_splash_shown';
@@ -33,6 +34,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
   autoDismiss = true,
   theme = 'light',
   className = '',
+  size = 'compact',
 }) => {
   const [isDismissed, setIsDismissed] = useState(false);
   const [animationKey, setAnimationKey] = useState(0);
@@ -46,6 +48,49 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
   const bgColor = isDark ? '#000000' : '#FFFFFF';
   const primaryColor = isDark ? '#FFFFFF' : '#000000';
   const secondaryColor = isDark ? '#888888' : '#777777';
+
+  // Responsive size presets (default 'compact' is 4x smaller than original 256px)
+  const sizeConfig =
+    typeof size === 'number'
+      ? {
+          symbolClass: '',
+          symbolStyle: { width: size, height: Math.round(size * (360 / 330)) },
+          symbolPx: size,
+          titleClass: 'text-xl sm:text-2xl font-bold tracking-tight',
+          brandLineClass: 'text-[7.5px] sm:text-[8px] font-semibold tracking-[0.28em] mt-1.5',
+          spacingClass: 'mt-2 sm:mt-2.5',
+          containerClass: '-mt-4 sm:-mt-6 max-w-xs px-4',
+        }
+      : size === 'large'
+      ? {
+          symbolClass: 'w-56 h-64 sm:w-64 sm:h-72',
+          symbolStyle: undefined,
+          symbolPx: 240,
+          titleClass: 'text-3xl sm:text-4xl font-extrabold tracking-tight',
+          brandLineClass: 'text-[9.5px] sm:text-[10px] font-semibold tracking-[0.3em] mt-2.5',
+          spacingClass: 'mt-3 sm:mt-5',
+          containerClass: '-mt-6 sm:-mt-10 max-w-sm px-6',
+        }
+      : size === 'medium'
+      ? {
+          symbolClass: 'w-28 h-32 sm:w-32 sm:h-36',
+          symbolStyle: undefined,
+          symbolPx: 128,
+          titleClass: 'text-2xl sm:text-3xl font-extrabold tracking-tight',
+          brandLineClass: 'text-[8.5px] sm:text-[9.5px] font-semibold tracking-[0.3em] mt-2',
+          spacingClass: 'mt-2.5 sm:mt-3.5',
+          containerClass: '-mt-5 sm:-mt-8 max-w-xs px-5',
+        }
+      : {
+          // 'compact' (Default) — 4 times smaller in dimension (~64px x 72px)
+          symbolClass: 'w-16 h-18 sm:w-18 sm:h-20',
+          symbolStyle: undefined,
+          symbolPx: 64,
+          titleClass: 'text-xl sm:text-2xl font-bold tracking-tight',
+          brandLineClass: 'text-[7.5px] sm:text-[8px] font-semibold tracking-[0.28em] mt-1.5',
+          spacingClass: 'mt-2 sm:mt-2.5',
+          containerClass: '-mt-4 sm:-mt-6 max-w-xs px-4',
+        };
 
   const handleDismiss = () => {
     setIsDismissed(true);
@@ -114,9 +159,12 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
           </div>
 
           {/* Central Logo & Animation Canvas */}
-          <div className="flex flex-col items-center justify-center -mt-6 sm:-mt-10 max-w-sm px-6">
+          <div className={`flex flex-col items-center justify-center ${sizeConfig.containerClass}`}>
             {/* SVG Symbol Animation Canvas (330 x 360 viewBox) */}
-            <div className="relative w-56 h-64 sm:w-64 sm:h-72 flex items-center justify-center">
+            <div
+              className={`relative ${sizeConfig.symbolClass} flex items-center justify-center`}
+              style={sizeConfig.symbolStyle}
+            >
               {prefersReducedMotion ? (
                 // Reduced Motion Alternative: Clean static fade-in
                 <motion.div
@@ -125,7 +173,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
                   transition={{ duration: 0.4, ease: 'easeOut' }}
                 >
                   <SewDeskSymbol
-                    size={240}
+                    size={sizeConfig.symbolPx}
                     color={primaryColor}
                     variant={isDark ? 'white' : 'black'}
                   />
@@ -157,7 +205,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
                   {/* Scene 2 & 3: The Thread Enters, Threads Eye & Draws S-Stitch (0.8s – 3.7s) */}
                   <ThreadAnimation
                     color={primaryColor}
-                    strokeWidth={3.6}
+                    strokeWidth={4.5}
                     approachDelay={0.8}
                     approachDuration={0.85}
                     drawDelay={1.7}
@@ -172,7 +220,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
               initial={
                 prefersReducedMotion
                   ? { opacity: 0 }
-                  : { opacity: 0, y: 16 }
+                  : { opacity: 0, y: 12 }
               }
               animate={{
                 opacity: 1,
@@ -183,12 +231,12 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
                 duration: 0.75,
                 ease: [0.16, 1, 0.3, 1], // Smooth deceleration curve
               }}
-              className="text-center mt-3 sm:mt-5 flex flex-col items-center"
+              className={`text-center ${sizeConfig.spacingClass} flex flex-col items-center`}
             >
               {/* Wordmark: SewDesk */}
               <h1
                 style={{ color: primaryColor }}
-                className="text-3xl sm:text-4xl font-extrabold tracking-tight font-sans leading-none"
+                className={`${sizeConfig.titleClass} font-sans leading-none`}
               >
                 SewDesk
               </h1>
@@ -202,7 +250,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
                   delay: prefersReducedMotion ? 0.5 : 4.45,
                   duration: 0.6,
                 }}
-                className="text-[9px] sm:text-[10px] font-semibold tracking-[0.3em] uppercase mt-2.5 font-sans"
+                className={`${sizeConfig.brandLineClass} font-sans uppercase`}
               >
                 MEASURE. MANAGE. CREATE.
               </motion.p>
