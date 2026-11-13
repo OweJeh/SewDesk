@@ -270,6 +270,32 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
 
       if (isLive) {
+        // Defensive guard: ensure the profiles row exists before inserting businesses
+        // (FK: businesses.owner_profile_id → profiles.id).
+        // The auth trigger should have created it, but email-confirmation flows
+        // may delay the trigger until after the session is established.
+        const { data: existingProfile } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        if (!existingProfile) {
+          const { error: profileUpsertError } = await supabase.from('profiles').upsert(
+            {
+              id: user.id,
+              full_name: profile?.full_name || user.email?.split('@')[0] || 'Owner',
+              email: user.email || data.contact_email,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          );
+          if (profileUpsertError) {
+            console.warn('Defensive profile upsert failed:', profileUpsertError.message);
+            // Proceed anyway — the row may exist and RLS just blocked the check.
+          }
+        }
+
         const { error: bError } = await supabase.from('businesses').insert(newBusiness);
         if (bError) throw bError;
 

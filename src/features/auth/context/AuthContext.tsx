@@ -201,12 +201,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) throw error;
 
         if (data.user) {
-          // Create profile record
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            full_name: fullName,
-            email,
-          });
+          // Upsert profile row — must succeed before onboarding calls createBusiness()
+          // The auth trigger (handle_new_user) should have already created the row,
+          // but we upsert here as a defensive guarantee.
+          const { error: profileError } = await supabase.from('profiles').upsert(
+            {
+              id: data.user.id,
+              full_name: fullName,
+              email,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'id' }
+          );
+          if (profileError) {
+            console.warn('Profile upsert after registration returned an error:', profileError.message);
+            // Don't throw — the trigger may have already created the row; RLS warning is non-fatal.
+          }
         }
         return { error: null };
       }

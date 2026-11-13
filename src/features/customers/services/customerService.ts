@@ -164,14 +164,46 @@ export const customerService = {
       };
 
       if (isLive) {
-        // Try calling atomic RPC if available, otherwise direct insert & slot increment
-        const { error: insErr } = await supabase.from('customers').insert(newCustomer);
-        if (insErr) throw insErr;
+        let rpcCompleted = false;
 
-        await supabase
-          .from('businesses')
-          .update({ customer_slots_used: nextSeq, updated_at: now })
-          .eq('id', input.business_id);
+        // 1. Try atomic database RPC (bypasses RLS via SECURITY DEFINER & enforces slot limits atomically)
+        try {
+          const { data: rpcData, error: rpcErr } = await supabase.rpc('register_customer_atomic', {
+            p_business_id: input.business_id,
+            p_full_name: input.full_name.trim(),
+            p_phone: input.phone.trim(),
+            p_whatsapp: input.whatsapp?.trim() || null,
+            p_email: input.email?.trim() || null,
+            p_measurement_profile: input.measurement_profile || 'Standard',
+            p_location: input.location?.trim() || null,
+            p_notes: input.notes?.trim() || null,
+          });
+
+          if (!rpcErr && rpcData?.success) {
+            newCustomer.id = rpcData.customer_id;
+            newCustomer.customer_number = rpcData.customer_number;
+            rpcCompleted = true;
+          } else if (rpcErr && rpcErr.message?.includes('CUSTOMER_ALLOWANCE_EXCEEDED')) {
+            throw rpcErr;
+          }
+        } catch (rpcEx: any) {
+          if (rpcEx.message?.includes('CUSTOMER_ALLOWANCE_EXCEEDED')) {
+            throw rpcEx;
+          }
+          // If RPC is unavailable or returns an error, gracefully proceed to direct insert
+          console.warn('register_customer_atomic RPC not used, using direct insert:', rpcEx?.message || rpcEx);
+        }
+
+        // 2. Direct insert fallback (uses RLS INSERT policy)
+        if (!rpcCompleted) {
+          const { error: insErr } = await supabase.from('customers').insert(newCustomer);
+          if (insErr) throw insErr;
+
+          await supabase
+            .from('businesses')
+            .update({ customer_slots_used: nextSeq, updated_at: now })
+            .eq('id', input.business_id);
+        }
       }
 
       // Persist in Dexie IndexedDB

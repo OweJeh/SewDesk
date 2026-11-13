@@ -673,13 +673,81 @@ CREATE POLICY "Owner or Admin can manage business members"
 -- CUSTOMERS
 CREATE POLICY "Customers viewable by business members"
   ON public.customers FOR SELECT
-  USING (public.is_business_member(business_id) OR public.is_platform_admin());
+  USING (
+    public.is_business_member(business_id) OR
+    public.is_business_owner(business_id) OR
+    public.is_platform_admin()
+  );
+
+CREATE POLICY "Customers insertable by authorized business members"
+  ON public.customers FOR INSERT
+  WITH CHECK (
+    public.is_business_owner(business_id) OR
+    public.is_business_member(business_id) OR
+    public.has_business_role(business_id, ARRAY['owner', 'admin', 'tailor', 'assistant']) OR
+    public.is_platform_admin()
+  );
 
 CREATE POLICY "Customers editable by authorized business members"
   ON public.customers FOR UPDATE
   USING (
     public.is_business_owner(business_id) OR
-    public.has_business_role(business_id, ARRAY['admin', 'tailor', 'assistant'])
+    public.is_business_member(business_id) OR
+    public.has_business_role(business_id, ARRAY['owner', 'admin', 'tailor', 'assistant']) OR
+    public.is_platform_admin()
+  );
+
+CREATE POLICY "Customers deletable by authorized business members"
+  ON public.customers FOR DELETE
+  USING (
+    public.is_business_owner(business_id) OR
+    public.has_business_role(business_id, ARRAY['owner', 'admin']) OR
+    public.is_platform_admin()
+  );
+
+-- CUSTOMER NOTES
+CREATE POLICY "Customer notes viewable by business members"
+  ON public.customer_notes FOR SELECT
+  USING (
+    public.is_business_member(business_id) OR
+    public.is_business_owner(business_id) OR
+    public.is_platform_admin()
+  );
+
+CREATE POLICY "Customer notes insertable by authorized business members"
+  ON public.customer_notes FOR INSERT
+  WITH CHECK (
+    public.is_business_owner(business_id) OR
+    public.is_business_member(business_id) OR
+    public.has_business_role(business_id, ARRAY['owner', 'admin', 'tailor', 'assistant']) OR
+    public.is_platform_admin()
+  );
+
+CREATE POLICY "Customer notes deletable by author or owner or admin"
+  ON public.customer_notes FOR DELETE
+  USING (
+    created_by = auth.uid() OR
+    public.is_business_owner(business_id) OR
+    public.has_business_role(business_id, ARRAY['owner', 'admin']) OR
+    public.is_platform_admin()
+  );
+
+-- CUSTOMER ACTIVITY
+CREATE POLICY "Customer activity viewable by business members"
+  ON public.customer_activity FOR SELECT
+  USING (
+    public.is_business_member(business_id) OR
+    public.is_business_owner(business_id) OR
+    public.is_platform_admin()
+  );
+
+CREATE POLICY "Customer activity insertable by business members"
+  ON public.customer_activity FOR INSERT
+  WITH CHECK (
+    public.is_business_owner(business_id) OR
+    public.is_business_member(business_id) OR
+    public.has_business_role(business_id, ARRAY['owner', 'admin', 'tailor', 'assistant', 'accountant']) OR
+    public.is_platform_admin()
   );
 
 -- MEASUREMENTS
