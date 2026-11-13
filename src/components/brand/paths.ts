@@ -59,22 +59,5 @@ export const USER_THREAD_ACCENTS: SvgPathElementDef[] = [
   },
 ];
 
-/**
- * Scene 2: Thread Approach Path
- * Enters from upper-right, arches naturally, and passes cleanly into the needle eye opening at (255, 45).
- */
-export const THREAD_APPROACH_TRAJECTORY =
-  "M 328 12 C 304 22, 280 34, 255 45";
-
-/**
- * Scene 3: S-Stitch Progressive Mask Path
- * Continuous bezier centerline covering:
- * - Upper loop from eye (255, 45) -> (175, 16) -> (112, 90) -> (185, 150)
- * - Waist crossing -> Lower belly (308, 245) -> Bottom base (180, 328)
- * - Sweeping left crescent flourish (30, 220) -> (90, 160)
- */
-export const THREAD_DRAW_MASK_PATH =
-  "M 255 45 C 248 26, 218 15, 175 16 C 122 17, 106 54, 114 90 C 122 126, 156 146, 185 150 C 225 156, 266 172, 292 202 C 316 230, 312 266, 280 296 C 245 326, 168 332, 108 322 C 48 312, 22 266, 30 220 C 35 184, 66 164, 102 154";
-
-// Backward-compatibility exports
+// Standard ViewBox for SewDesk signature mark
 export const SEWDESK_VIEWBOX = "0 0 330 360";

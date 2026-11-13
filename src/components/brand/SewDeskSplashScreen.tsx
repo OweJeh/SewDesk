@@ -195,21 +195,20 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
                     ease: 'easeInOut',
                   }}
                 >
-                  {/* Scene 1: The Needle Appears (0.0s – 0.8s) */}
+                  {/* Scene 2 & 3: The Thread Traces the S-Stitch (0.85s – 3.4s) */}
+                  <ThreadAnimation
+                    color={primaryColor}
+                    strokeWidth={2.4}
+                    drawDelay={0.85}
+                    drawDuration={2.4}
+                    isDark={isDark}
+                  />
+
+                  {/* Scene 1: The Needle Appears (0.0s – 0.8s, on top so eye opening frames thread) */}
                   <NeedleAnimation
                     color={primaryColor}
                     delay={0.1}
                     duration={0.8}
-                  />
-
-                  {/* Scene 2 & 3: The Thread Enters, Threads Eye & Draws S-Stitch (0.8s – 3.7s) */}
-                  <ThreadAnimation
-                    color={primaryColor}
-                    strokeWidth={4.5}
-                    approachDelay={0.8}
-                    approachDuration={0.85}
-                    drawDelay={1.7}
-                    drawDuration={2.0}
                   />
                 </motion.svg>
               )}

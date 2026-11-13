@@ -53,21 +53,6 @@ export const SewDeskSymbol: React.FC<SewDeskSymbolProps> = ({
       className={cn('inline-block select-none overflow-visible', className)}
       aria-label="SewDesk signature needle and thread logo"
     >
-      {/* Needle Layer */}
-      <g id="needle-group">
-        <path
-          d={USER_NEEDLE_MAIN.d}
-          transform={USER_NEEDLE_MAIN.transform}
-          fill={needleFill}
-        />
-        <path
-          d={USER_NEEDLE_TIP.d}
-          transform={USER_NEEDLE_TIP.transform}
-          fill={variant === 'white' ? '#FFFFFF' : needleFill}
-          opacity={variant === 'white' ? 0.7 : 0.85}
-        />
-      </g>
-
       {/* Thread Layer */}
       <g id="thread-group">
         <path
@@ -84,6 +69,21 @@ export const SewDeskSymbol: React.FC<SewDeskSymbolProps> = ({
             opacity={0.65}
           />
         ))}
+      </g>
+
+      {/* Needle Layer (On top, framing thread through hollow eye) */}
+      <g id="needle-group">
+        <path
+          d={USER_NEEDLE_MAIN.d}
+          transform={USER_NEEDLE_MAIN.transform}
+          fill={needleFill}
+        />
+        <path
+          d={USER_NEEDLE_TIP.d}
+          transform={USER_NEEDLE_TIP.transform}
+          fill={variant === 'white' ? '#FFFFFF' : needleFill}
+          opacity={variant === 'white' ? 0.7 : 0.85}
+        />
       </g>
     </svg>
   );
