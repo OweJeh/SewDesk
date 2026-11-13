@@ -1,13 +1,15 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { SewDeskSymbol } from '@/components/brand/SewDeskSymbol';
 
-interface LogoProps {
+export interface LogoProps {
   className?: string;
   showTagline?: boolean;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'xl';
   asLink?: boolean;
   to?: string;
+  theme?: 'light' | 'dark';
 }
 
 export const Logo: React.FC<LogoProps> = ({
@@ -16,61 +18,53 @@ export const Logo: React.FC<LogoProps> = ({
   size = 'md',
   asLink = true,
   to = '/',
+  theme = 'light',
 }) => {
-  const iconSizes = {
-    sm: 'w-7 h-7',
-    md: 'w-9 h-9',
-    lg: 'w-12 h-12',
+  const iconPixelSizes = {
+    sm: 28,
+    md: 36,
+    lg: 48,
+    xl: 64,
   };
 
   const textSizes = {
     sm: 'text-lg',
     md: 'text-2xl',
     lg: 'text-3xl',
+    xl: 'text-4xl',
   };
+
+  const isDark = theme === 'dark';
+  const textColor = isDark ? 'text-white' : 'text-black';
+  const taglineColor = isDark ? 'text-neutral-400' : 'text-[#777777]';
 
   const content = (
     <div className={cn('inline-flex items-center gap-3 select-none', className)}>
-      {/* Needle & Stitched Seam Icon */}
-      <div className={cn('relative flex items-center justify-center bg-black rounded-lg p-1.5 shadow-sm', iconSizes[size])}>
-        <svg
-          viewBox="0 0 48 48"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          className="w-full h-full text-white"
-        >
-          {/* Needle Shaft */}
-          <path d="M37 11L14 34" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-          {/* Needle Point */}
-          <path d="M14 34L10 38" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          {/* Needle Eye */}
-          <ellipse
-            cx="35.5"
-            cy="12.5"
-            rx="1.4"
-            ry="2.8"
-            transform="rotate(-45 35.5 12.5)"
-            stroke="currentColor"
-            strokeWidth="1.2"
-            fill="#000000"
-          />
-          {/* Precision Running Stitched Line */}
-          <path
-            d="M6 42C12 36 18 36 24 30C30 24 36 24 42 18"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeDasharray="3.5 3.5"
-          />
-        </svg>
+      {/* Official Signature Needle & Stitched 'S' Symbol */}
+      <div className="shrink-0 flex items-center justify-center">
+        <SewDeskSymbol
+          size={iconPixelSizes[size]}
+          variant={isDark ? 'white' : 'black'}
+        />
       </div>
 
-      <div className="flex flex-col">
-        <span className={cn('font-bold tracking-tight text-black leading-none font-sans', textSizes[size])}>
-          Sew<span className="font-light">Desk</span>
+      <div className="flex flex-col justify-center">
+        <span
+          className={cn(
+            'font-extrabold tracking-tight leading-none font-sans',
+            textSizes[size],
+            textColor
+          )}
+        >
+          SewDesk
         </span>
         {showTagline && (
-          <span className="text-[9px] font-semibold tracking-widest text-[#777777] uppercase mt-1">
+          <span
+            className={cn(
+              'text-[8.5px] font-semibold tracking-[0.25em] uppercase mt-1 font-sans',
+              taglineColor
+            )}
+          >
             Measure. Manage. Create.
           </span>
         )}
@@ -88,4 +82,3 @@ export const Logo: React.FC<LogoProps> = ({
 
   return content;
 };
-

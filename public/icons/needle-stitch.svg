@@ -1,12 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
-  <!-- Minimalist Needle & Stitched Line Symbol -->
-  <!-- Needle Body -->
-  <path d="M38 10L14 34" stroke="#000000" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- Needle Point -->
-  <path d="M14 34L10 38" stroke="#000000" stroke-width="1.8" stroke-linecap="round"/>
-  <!-- Needle Eye -->
-  <ellipse cx="36" cy="12" rx="1.5" ry="3.2" transform="rotate(-45 36 12)" stroke="#000000" stroke-width="1.2" fill="#FFFFFF"/>
-  <!-- Elegant Stitched Running Seam Path (precision dashed dasharray) -->
-  <path d="M6 42C12 36 18 36 24 30C30 24 36 24 42 18" stroke="#000000" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="3.5 3.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300" fill="none">
+  <!-- SewDesk Official Brand Signature Symbol -->
+  <!-- Hand-crafted bespoke tailoring needle & continuous stitched 'S' monogram -->
+  <path
+    d="M 56.0 276.4 L 163.7 134.4 C 166.0 130.5, 169.1 126.6, 173.0 121.2 L 184.7 105.6 C 187.1 102.5, 191.0 101.7, 193.3 104.0 C 195.6 106.4, 195.6 110.3, 192.5 114.2 L 181.6 129.0 C 177.7 134.4, 173.8 139.1, 170.7 143.0 L 59.9 278.0 Z M 176.1 114.9 C 173.8 118.1, 173.0 120.4, 175.3 123.5 L 181.6 131.3 C 183.9 134.4, 187.1 133.6, 188.6 131.3 C 190.2 128.2, 190.2 125.8, 187.9 122.7 L 181.6 114.9 C 180.1 112.6, 177.7 112.6, 176.1 114.9 Z"
+    fill="currentColor"
+    fill-rule="evenodd"
+  />
+  <path
+    d="M 99.7 138.3 C 71.6 148.4, 63.8 185.1, 87.2 210.8 C 104.4 228.0, 141.0 231.1, 180.0 221.8 C 219.0 210.8, 247.9 187.4, 241.7 156.2 C 235.4 126.6, 193.3 118.8, 152.7 131.3 C 117.6 99.3, 107.5 60.3, 143.4 29.1 C 176.1 1.8, 226.8 13.5, 237.0 52.5 C 244.8 83.7, 199.5 114.9, 177.7 120.4"
+    stroke="currentColor"
+    stroke-width="4.8"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
 </svg>
-

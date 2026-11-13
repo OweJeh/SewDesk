@@ -17,6 +17,7 @@ import { TermsPage } from '@/features/public/pages/TermsPage';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { RegisterPage } from '@/features/auth/pages/RegisterPage';
 import { ForgotPasswordPage } from '@/features/auth/pages/ForgotPasswordPage';
+import { SplashDemoPage } from '@/features/public/pages/SplashDemoPage';
 import { OnboardingPage } from '@/features/onboarding/pages/OnboardingPage';
 
 // Business Workspace pages
@@ -59,6 +60,7 @@ export const router = createBrowserRouter([
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
       { path: 'forgot-password', element: <ForgotPasswordPage /> },
+      { path: 'splash', element: <SplashDemoPage /> },
     ],
   },
 

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SewDesk Precision Overlay</title>
+  <style>
+    body {
+      background: #f0f0f0;
+      margin: 0;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      font-family: Inter, sans-serif;
+      gap: 20px;
+    }
+    .overlay-container {
+      position: relative;
+      width: 1024px;
+      height: 682px;
+      background: white;
+      box-shadow: 0 4px 25px rgba(0,0,0,0.1);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .ref-img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1024px;
+      height: 682px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .vector-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 1024px;
+      height: 682px;
+    }
+    .controls {
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    button {
+      padding: 8px 16px;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <button onclick="toggleRef()">Toggle Reference (50% / 0% / 100%)</button>
+    <button onclick="toggleColor()">Toggle Vector Color (Cyan / Black / Red)</button>
+    <span style="font-size: 13px; color: #555;">Pixel-accurate overlay on user sketch</span>
+  </div>
+
+  <div class="overlay-container">
+    <img id="ref-image" class="ref-img" src="/sewdesk-sketch-ref.png" alt="Reference">
+    <svg id="vector-layer" class="vector-svg" viewBox="0 0 1024 682" fill="none">
+      <!-- Needle -->
+      <!-- Needle shaft from (376, 412) to (550, 187) -->
+      <path
+        id="needle-path"
+        d="M 376 412
+           L 514 230
+           C 517 225, 521 220, 526 213
+           L 541 193
+           C 544 189, 549 188, 552 191
+           C 555 194, 555 199, 551 204
+           L 537 223
+           C 532 230, 527 236, 523 241
+           L 381 414
+           Z
+           M 530 205
+           C 527 209, 526 212, 529 216
+           L 537 226
+           C 540 230, 544 229, 546 226
+           C 548 222, 548 219, 545 215
+           L 537 205
+           C 535 202, 532 202, 530 205
+           Z"
+        fill="#00ccff"
+        fill-rule="evenodd"
+      />
+
+      <!-- Thread: Exact Continuous Path -->
+      <path
+        id="thread-path"
+        d="M 432 235
+           C 396 248, 386 295, 416 328
+           C 438 350, 485 354, 535 342
+           C 585 328, 622 298, 614 258
+           C 606 220, 552 210, 500 226
+           C 455 185, 442 135, 488 95
+           C 530 60, 595 75, 608 125
+           C 618 165, 560 205, 532 212"
+        stroke="#00ccff"
+        stroke-width="6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
+
+      <!-- Wordmark -->
+      <text x="512" y="508" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="114" font-weight="800" fill="#00ccff" letter-spacing="-3">
+        SewDesk
+      </text>
+
+      <!-- Tagline -->
+      <text x="512" y="556" text-anchor="middle" font-family="Inter, -apple-system, sans-serif" font-size="19" font-weight="600" fill="#00ccff" letter-spacing="7.5">
+        MEASURE. MANAGE. CREATE.
+      </text>
+    </svg>
+  </div>
+
+  <script>
+    let refOpacity = 0.5;
+    function toggleRef() {
+      const img = document.getElementById('ref-image');
+      if (refOpacity === 0.5) refOpacity = 0;
+      else if (refOpacity === 0) refOpacity = 1;
+      else refOpacity = 0.5;
+      img.style.opacity = refOpacity;
+    }
+
+    let colorIdx = 0;
+    const colors = ['#00ccff', '#000000', '#ff0055'];
+    function toggleColor() {
+      colorIdx = (colorIdx + 1) % colors.length;
+      const c = colors[colorIdx];
+      document.getElementById('needle-path').setAttribute('fill', c);
+      document.getElementById('thread-path').setAttribute('stroke', c);
+      document.querySelectorAll('text').forEach(t => t.setAttribute('fill', c));
+    }
+  </script>
+</body>
+</html>
