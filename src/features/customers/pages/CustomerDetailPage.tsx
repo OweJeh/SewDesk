@@ -4,6 +4,7 @@ import { useCurrentBusiness } from '@/features/businesses/context/BusinessContex
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { customerService, type CustomerNoteItem, type CustomerActivityItem } from '@/features/customers/services/customerService';
 import { measurementService } from '@/features/measurements/services/measurementService';
+import { orderService, type OrderWithDetails } from '@/features/orders/services/orderService';
 import { MeasurementComparisonModal } from '@/features/measurements/components/MeasurementComparisonModal';
 import type { Customer, MeasurementSet, MeasurementUnit } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -44,6 +45,7 @@ export const CustomerDetailPage: React.FC = () => {
   const [measurementSets, setMeasurementSets] = useState<MeasurementSet[]>([]);
   const [notes, setNotes] = useState<CustomerNoteItem[]>([]);
   const [activities, setActivities] = useState<CustomerActivityItem[]>([]);
+  const [customerOrders, setCustomerOrders] = useState<OrderWithDetails[]>([]);
   const [newNoteText, setNewNoteText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
@@ -58,6 +60,10 @@ export const CustomerDetailPage: React.FC = () => {
 
   const currency = currentBusiness?.default_currency || 'GHS';
 
+  const totalSpent = customerOrders.reduce((sum, o) => sum + (o.amount_paid || 0), 0);
+  const balanceDue = customerOrders.reduce((sum, o) => sum + (o.balance || 0), 0);
+  const allCustomerPayments = customerOrders.flatMap((o) => o.payments || []);
+
   useEffect(() => {
     if (!id) return;
     setIsLoading(true);
@@ -67,7 +73,8 @@ export const CustomerDetailPage: React.FC = () => {
       measurementService.getCustomerMeasurementSets(id),
       customerService.getCustomerNotes(id),
       customerService.getCustomerActivity(id),
-    ]).then(([cust, sets, noteList, actList]) => {
+      currentBusiness?.id ? orderService.getOrders(currentBusiness.id) : Promise.resolve([]),
+    ]).then(([cust, sets, noteList, actList, allOrders]) => {
       setCustomer(cust);
       setMeasurementSets(sets);
       if (sets.length > 0) {
@@ -75,6 +82,8 @@ export const CustomerDetailPage: React.FC = () => {
       }
       setNotes(noteList);
       setActivities(actList);
+      const forThisCust = allOrders.filter((o) => o.customer_id === id);
+      setCustomerOrders(forThisCust);
       setIsLoading(false);
     });
   }, [id]);
@@ -185,7 +194,7 @@ export const CustomerDetailPage: React.FC = () => {
                 Record Measurement
               </Button>
             </Link>
-            <Link to={`/app/orders?customerId=${customer.id}`}>
+            <Link to={`/app/orders/new?customerId=${customer.id}`}>
               <Button size="sm" variant="outline" leftIcon={<Scissors className="w-3.5 h-3.5" />}>
                 New Order
               </Button>
@@ -198,8 +207,8 @@ export const CustomerDetailPage: React.FC = () => {
           {[
             { id: 'overview', label: 'Overview', icon: Users },
             { id: 'measurements', label: `Measurements (${measurementSets.length})`, icon: Ruler },
-            { id: 'orders', label: 'Orders (0)', icon: Scissors },
-            { id: 'payments', label: 'Payments', icon: CreditCard },
+            { id: 'orders', label: `Orders (${customerOrders.length})`, icon: Scissors },
+            { id: 'payments', label: `Payments (${allCustomerPayments.length})`, icon: CreditCard },
             { id: 'notes', label: `Notes (${notes.length})`, icon: FileText },
             { id: 'activity', label: `Activity (${activities.length})`, icon: Activity },
           ].map((t) => {
@@ -230,24 +239,24 @@ export const CustomerDetailPage: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div className="bg-white border border-[#E5E5E5] rounded-xl p-5 shadow-sm">
               <span className="text-[10px] uppercase font-semibold text-[#777777]">Total Orders</span>
-              <div className="text-2xl font-bold font-mono text-black mt-1">0</div>
+              <div className="text-2xl font-bold font-mono text-black mt-1">{customerOrders.length}</div>
               <p className="text-[10px] text-neutral-400 mt-1">Bespoke garments</p>
             </div>
 
             <div className="bg-white border border-[#E5E5E5] rounded-xl p-5 shadow-sm">
               <span className="text-[10px] uppercase font-semibold text-[#777777]">Total Spent</span>
               <div className="text-2xl font-bold font-mono text-black mt-1">
-                {formatCurrency(0, currency)}
+                {formatCurrency(totalSpent, currency)}
               </div>
               <p className="text-[10px] text-neutral-400 mt-1">Lifetime client revenue</p>
             </div>
 
             <div className="bg-white border border-[#E5E5E5] rounded-xl p-5 shadow-sm">
               <span className="text-[10px] uppercase font-semibold text-[#777777]">Balance Due</span>
-              <div className="text-2xl font-bold font-mono text-green-700 mt-1">
-                {formatCurrency(0, currency)}
+              <div className={`text-2xl font-bold font-mono mt-1 ${balanceDue > 0 ? 'text-amber-600' : 'text-green-700'}`}>
+                {formatCurrency(balanceDue, currency)}
               </div>
-              <p className="text-[10px] text-neutral-400 mt-1">All accounts settled</p>
+              <p className="text-[10px] text-neutral-400 mt-1">{balanceDue > 0 ? 'Payment pending' : 'All accounts settled'}</p>
             </div>
 
             <div className="bg-white border border-[#E5E5E5] rounded-xl p-5 shadow-sm">
@@ -469,26 +478,95 @@ export const CustomerDetailPage: React.FC = () => {
 
       {/* TAB 3: ORDERS */}
       {activeTab === 'orders' && (
-        <div className="bg-white border border-[#E5E5E5] rounded-xl p-12 text-center space-y-4 shadow-sm">
-          <Scissors className="w-8 h-8 mx-auto text-neutral-400" />
-          <h3 className="text-sm font-bold text-black">No Garment Orders for this Client</h3>
-          <p className="text-xs text-[#777777] max-w-sm mx-auto">
-            Create an order linked to {customer.full_name}'s body measurements to track tailoring production.
-          </p>
-          <Link to={`/app/orders?customerId=${customer.id}`}>
-            <Button size="sm">Create New Order</Button>
-          </Link>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-black">
+              Garment Orders ({customerOrders.length})
+            </h3>
+            <Link to={`/app/orders/new?customerId=${customer.id}`}>
+              <Button size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>
+                Create New Order
+              </Button>
+            </Link>
+          </div>
+
+          {customerOrders.length === 0 ? (
+            <div className="bg-white border border-[#E5E5E5] rounded-xl p-12 text-center space-y-4 shadow-sm">
+              <Scissors className="w-8 h-8 mx-auto text-neutral-400" />
+              <h3 className="text-sm font-bold text-black">No Garment Orders for this Client</h3>
+              <p className="text-xs text-[#777777] max-w-sm mx-auto">
+                Create an order linked to {customer.full_name}'s body measurements to track tailoring production.
+              </p>
+              <Link to={`/app/orders/new?customerId=${customer.id}`}>
+                <Button size="sm">Create First Order</Button>
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {customerOrders.map((ord) => (
+                <div
+                  key={ord.id}
+                  onClick={() => navigate(`/app/orders/${ord.id}`)}
+                  className="bg-white border border-[#E5E5E5] hover:border-black rounded-xl p-5 shadow-sm cursor-pointer transition-all space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-black">{ord.order_number}</span>
+                    <Badge variant="outline" className="text-[10px] capitalize">
+                      {ord.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-black">{ord.garment_type}</div>
+                    <div className="text-xs text-[#777777] mt-0.5">
+                      {ord.fabric || 'Custom Fabric'} {ord.colour ? `• ${ord.colour}` : ''}
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-[#E5E5E5] flex items-center justify-between text-xs">
+                    <span className="text-neutral-500">Total: {formatCurrency(ord.total_price, currency)}</span>
+                    <span className={`font-bold ${ord.balance > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                      {ord.balance > 0 ? `Due: ${formatCurrency(ord.balance, currency)}` : 'Paid in full'}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       {/* TAB 4: PAYMENTS */}
       {activeTab === 'payments' && (
-        <div className="bg-white border border-[#E5E5E5] rounded-xl p-12 text-center space-y-4 shadow-sm">
-          <CreditCard className="w-8 h-8 mx-auto text-neutral-400" />
-          <h3 className="text-sm font-bold text-black">No Transactions Recorded</h3>
-          <p className="text-xs text-[#777777] max-w-sm mx-auto">
-            Payment records, deposits, and printable receipts for this customer will appear here.
-          </p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-black">
+              Payment Transactions ({allCustomerPayments.length})
+            </h3>
+          </div>
+
+          {allCustomerPayments.length === 0 ? (
+            <div className="bg-white border border-[#E5E5E5] rounded-xl p-12 text-center space-y-4 shadow-sm">
+              <CreditCard className="w-8 h-8 mx-auto text-neutral-400" />
+              <h3 className="text-sm font-bold text-black">No Transactions Recorded</h3>
+              <p className="text-xs text-[#777777] max-w-sm mx-auto">
+                Payment records, deposits, and receipts for this customer will appear here once an order is paid.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white border border-[#E5E5E5] rounded-xl divide-y divide-[#E5E5E5] shadow-sm">
+              {allCustomerPayments.map((p) => (
+                <div key={p.id} className="p-4 flex items-center justify-between text-xs">
+                  <div>
+                    <div className="font-bold text-black capitalize">{p.method.replace('_', ' ')}</div>
+                    <div className="text-[10px] text-[#777777]">{p.reference || formatDate(p.payment_date)}</div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-bold text-black">{formatCurrency(p.amount, currency)}</div>
+                    <Badge variant="success" className="text-[9px]">Received</Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

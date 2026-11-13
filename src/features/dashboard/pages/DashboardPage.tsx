@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import { formatCurrency } from '@/lib/utils';
+import { customerService } from '@/features/customers/services/customerService';
+import { orderService, type OrderWithDetails } from '@/features/orders/services/orderService';
+import { paymentService } from '@/features/payments/services/paymentService';
+import { formatCurrency, formatDate } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Users,
   Scissors,
@@ -18,6 +22,7 @@ import {
   AlertTriangle,
   PackageCheck,
   TrendingUp,
+  Plus,
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -26,9 +31,33 @@ export const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [dismissChecklist, setDismissChecklist] = useState(false);
+  const [customerCount, setCustomerCount] = useState(0);
+  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
+  const [revenue, setRevenue] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  const slotsUsed = currentBusiness?.customer_slots_used ?? 0;
+  const slotsUsed = customerCount || (currentBusiness?.customer_slots_used ?? 0);
   const currency = currentBusiness?.default_currency ?? 'GHS';
+
+  useEffect(() => {
+    if (!currentBusiness?.id) return;
+    setLoading(true);
+
+    Promise.all([
+      customerService.getCustomers(currentBusiness.id),
+      orderService.getOrders(currentBusiness.id),
+      paymentService.getPayments(currentBusiness.id),
+    ]).then(([custs, ords, pays]) => {
+      setCustomerCount(custs.length);
+      setOrders(ords);
+      const totalRev = pays.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+      setRevenue(totalRev);
+      setLoading(false);
+    });
+  }, [currentBusiness?.id]);
+
+  const activeOrders = orders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled');
+  const totalOutstanding = orders.reduce((sum, o) => sum + (Number(o.balance) || 0), 0);
 
   return (
     <div className="space-y-6">
@@ -138,7 +167,7 @@ export const DashboardPage: React.FC = () => {
             <Scissors className="w-4 h-4 text-neutral-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-black">0</span>
+            <span className="text-2xl font-bold font-mono text-black">{activeOrders.length}</span>
             <span className="text-xs text-neutral-400">in workshop</span>
           </div>
         </div>
@@ -152,7 +181,7 @@ export const DashboardPage: React.FC = () => {
           </div>
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold font-mono text-black">
-              {formatCurrency(0, currency)}
+              {formatCurrency(revenue, currency)}
             </span>
           </div>
         </div>
@@ -165,12 +194,58 @@ export const DashboardPage: React.FC = () => {
             <CreditCard className="w-4 h-4 text-neutral-400" />
           </div>
           <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-black">
-              {formatCurrency(0, currency)}
+            <span className={`text-2xl font-bold font-mono ${totalOutstanding > 0 ? 'text-amber-600' : 'text-black'}`}>
+              {formatCurrency(totalOutstanding, currency)}
             </span>
           </div>
         </div>
       </div>
+
+      {/* Workshop Orders Pipeline Spotlight */}
+      {orders.length > 0 && (
+        <div className="bg-white border border-[#E5E5E5] rounded-xl p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E5E5E5] pb-4">
+            <div>
+              <h3 className="text-sm font-bold text-black uppercase tracking-wider">
+                Active Workshop Orders ({activeOrders.length})
+              </h3>
+              <p className="text-xs text-[#777777] mt-0.5">
+                Garments currently in fabric cutting, stitching, or awaiting fitting.
+              </p>
+            </div>
+            <Link to="/app/orders">
+              <span className="text-xs font-semibold text-black hover:underline flex items-center gap-1">
+                View Full Pipeline &rarr;
+              </span>
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {activeOrders.slice(0, 3).map((ord) => (
+              <div
+                key={ord.id}
+                onClick={() => navigate(`/app/orders/${ord.id}`)}
+                className="p-4 bg-[#FAFAFA] border border-[#E5E5E5] hover:border-black rounded-lg cursor-pointer transition-all space-y-2"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black text-black">{ord.order_number}</span>
+                  <Badge variant="outline" className="text-[10px] capitalize">
+                    {ord.status.replace('_', ' ')}
+                  </Badge>
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-black">{ord.customer?.full_name || 'Client'}</div>
+                  <div className="text-[11px] text-[#777777]">{ord.garment_type}</div>
+                </div>
+                <div className="flex items-center justify-between text-[11px] pt-1 border-t border-[#E5E5E5] text-neutral-500">
+                  <span>Due: {ord.due_date ? formatDate(ord.due_date) : 'Flexible'}</span>
+                  <span className="font-bold text-black">{formatCurrency(ord.total_price, currency)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Onboarding Checklist (if new studio) */}
       {!dismissChecklist && (

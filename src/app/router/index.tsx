@@ -27,6 +27,8 @@ import { CustomerDetailPage } from '@/features/customers/pages/CustomerDetailPag
 import { MeasurementsPage } from '@/features/measurements/pages/MeasurementsPage';
 import { NewMeasurementSessionPage } from '@/features/measurements/pages/NewMeasurementSessionPage';
 import { OrdersPage } from '@/features/orders/pages/OrdersPage';
+import { NewOrderPage } from '@/features/orders/pages/NewOrderPage';
+import { OrderDetailPage } from '@/features/orders/pages/OrderDetailPage';
 import { PaymentsPage } from '@/features/payments/pages/PaymentsPage';
 import { StaffPage } from '@/features/staff/pages/StaffPage';
 import { ReportsPage } from '@/features/reports/pages/ReportsPage';
@@ -90,7 +92,8 @@ export const router = createBrowserRouter([
       { path: 'measurements', element: <MeasurementsPage /> },
       { path: 'measurements/new', element: <NewMeasurementSessionPage /> },
       { path: 'orders', element: <OrdersPage /> },
-      { path: 'orders/new', element: <OrdersPage /> },
+      { path: 'orders/new', element: <NewOrderPage /> },
+      { path: 'orders/:id', element: <OrderDetailPage /> },
       { path: 'payments', element: <PaymentsPage /> },
       { path: 'staff', element: <StaffPage /> },
       { path: 'reports', element: <ReportsPage /> },
