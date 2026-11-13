@@ -28,7 +28,7 @@ export interface ThreadAnimationProps {
 export const ThreadAnimation: React.FC<ThreadAnimationProps> = ({
   color = '#000000',
   className,
-  strokeWidth = 2.4,
+  strokeWidth = 7.2,
   entryDelay = 0.8,
   entryDuration = 1.8,
   drawDelay = 1.6,

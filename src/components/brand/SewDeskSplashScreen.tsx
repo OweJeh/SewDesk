@@ -198,7 +198,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
                   {/* Scene 2 & 3: The Thread Threads the Eye & Traces the S-Stitch (0.8s – 3.7s) */}
                   <ThreadAnimation
                     color={primaryColor}
-                    strokeWidth={2.4}
+                    strokeWidth={7.2}
                     entryDelay={0.8}
                     entryDuration={1.8}
                     drawDelay={1.6}
