@@ -115,8 +115,8 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
 
           {/* Central Logo & Animation Canvas */}
           <div className="flex flex-col items-center justify-center -mt-6 sm:-mt-10 max-w-sm px-6">
-            {/* SVG Symbol Animation Canvas (300 x 300 viewBox) */}
-            <div className="relative w-56 h-56 sm:w-64 sm:h-64 flex items-center justify-center">
+            {/* SVG Symbol Animation Canvas (330 x 360 viewBox) */}
+            <div className="relative w-56 h-64 sm:w-64 sm:h-72 flex items-center justify-center">
               {prefersReducedMotion ? (
                 // Reduced Motion Alternative: Clean static fade-in
                 <motion.div
@@ -125,7 +125,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
                   transition={{ duration: 0.4, ease: 'easeOut' }}
                 >
                   <SewDeskSymbol
-                    size={220}
+                    size={240}
                     color={primaryColor}
                     variant={isDark ? 'white' : 'black'}
                   />
@@ -133,7 +133,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
               ) : (
                 // Full Signature Motion Choreography
                 <motion.svg
-                  viewBox="0 0 300 300"
+                  viewBox="0 0 330 360"
                   fill="none"
                   xmlns="http://www.w3.org/2000/svg"
                   className="w-full h-full overflow-visible"
@@ -147,21 +147,21 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
                     ease: 'easeInOut',
                   }}
                 >
-                  {/* Scene 1: The Needle Appears (0.0s – 0.85s) */}
+                  {/* Scene 1: The Needle Appears (0.0s – 0.8s) */}
                   <NeedleAnimation
                     color={primaryColor}
                     delay={0.1}
-                    duration={0.85}
+                    duration={0.8}
                   />
 
-                  {/* Scene 2 & 3: The Thread Enters, Threads Eye & Draws S-Stitch (0.85s – 3.8s) */}
+                  {/* Scene 2 & 3: The Thread Enters, Threads Eye & Draws S-Stitch (0.8s – 3.7s) */}
                   <ThreadAnimation
                     color={primaryColor}
-                    strokeWidth={4.8}
-                    approachDelay={0.9}
-                    approachDuration={0.8}
-                    drawDelay={1.75}
-                    drawDuration={2.05}
+                    strokeWidth={3.6}
+                    approachDelay={0.8}
+                    approachDuration={0.85}
+                    drawDelay={1.7}
+                    drawDuration={2.0}
                   />
                 </motion.svg>
               )}
@@ -224,3 +224,4 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
     </AnimatePresence>
   );
 };
+

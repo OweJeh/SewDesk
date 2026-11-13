@@ -285,3 +285,4 @@ export const SplashDemoPage: React.FC = () => {
     </div>
   );
 };
+

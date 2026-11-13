@@ -1,9 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 90" fill="none">
-  <!-- SewDesk Official Typography Wordmark -->
-  <text x="200" y="52" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="800" fill="currentColor" letter-spacing="-1.8">
-    SewDesk
-  </text>
-  <text x="200" y="78" text-anchor="middle" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="10.5" font-weight="600" fill="#777777" letter-spacing="4.5">
-    MEASURE. MANAGE. CREATE.
-  </text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120" fill="none">
+  <!-- SewDesk Official Wordmark & Brand Line -->
+  <text x="200" y="65" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="52" font-weight="800" fill="currentColor" text-anchor="middle" letter-spacing="-0.02em">SewDesk</text>
+  <text x="200" y="102" font-family="'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="600" fill="currentColor" text-anchor="middle" letter-spacing="0.35em" opacity="0.75">MEASURE. MANAGE. CREATE.</text>
 </svg>

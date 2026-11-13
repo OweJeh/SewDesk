@@ -1,6 +1,12 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { SEWDESK_NEEDLE_PATH, SEWDESK_THREAD_PATH } from './paths';
+import {
+  USER_NEEDLE_MAIN,
+  USER_NEEDLE_TIP,
+  USER_THREAD_MAIN,
+  USER_THREAD_ACCENTS,
+  SEWDESK_VIEWBOX,
+} from './paths';
 
 export interface SewDeskSymbolProps {
   className?: string;
@@ -15,6 +21,8 @@ export interface SewDeskSymbolProps {
  * SewDeskSymbol — The official signature brand mark of SewDesk.
  * Features the bespoke diagonal tailoring needle crossing through
  * a continuous stitched S-shaped thread monogram.
+ *
+ * Rendered using the user-provided vector assets in exact 330 x 360 geometry.
  */
 export const SewDeskSymbol: React.FC<SewDeskSymbolProps> = ({
   className,
@@ -33,33 +41,50 @@ export const SewDeskSymbol: React.FC<SewDeskSymbolProps> = ({
       : 'currentColor');
 
   const needleFill = needleColor || defaultFill;
-  const threadStroke = threadColor || defaultFill;
+  const threadFill = threadColor || defaultFill;
 
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 300 300"
+      viewBox={SEWDESK_VIEWBOX}
       fill="none"
       width={size}
       height={size}
       className={cn('inline-block select-none overflow-visible', className)}
       aria-label="SewDesk signature needle and thread logo"
     >
-      {/* Sewing Needle: Tapered diagonal shaft with transparent eye opening */}
-      <path
-        d={SEWDESK_NEEDLE_PATH}
-        fill={needleFill}
-        fillRule="evenodd"
-      />
+      {/* Needle Layer */}
+      <g id="needle-group">
+        <path
+          d={USER_NEEDLE_MAIN.d}
+          transform={USER_NEEDLE_MAIN.transform}
+          fill={needleFill}
+        />
+        <path
+          d={USER_NEEDLE_TIP.d}
+          transform={USER_NEEDLE_TIP.transform}
+          fill={variant === 'white' ? '#FFFFFF' : needleFill}
+          opacity={variant === 'white' ? 0.7 : 0.85}
+        />
+      </g>
 
-      {/* Continuous Stitched Thread: Forming the flowing S-shape through the needle eye */}
-      <path
-        d={SEWDESK_THREAD_PATH}
-        stroke={threadStroke}
-        strokeWidth="4.8"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+      {/* Thread Layer */}
+      <g id="thread-group">
+        <path
+          d={USER_THREAD_MAIN.d}
+          transform={USER_THREAD_MAIN.transform}
+          fill={threadFill}
+        />
+        {USER_THREAD_ACCENTS.map((accent, idx) => (
+          <path
+            key={idx}
+            d={accent.d}
+            transform={accent.transform}
+            fill={threadFill}
+            opacity={0.65}
+          />
+        ))}
+      </g>
     </svg>
   );
 };
