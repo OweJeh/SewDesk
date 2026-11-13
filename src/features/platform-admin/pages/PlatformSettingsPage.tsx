@@ -75,3 +75,4 @@ export const PlatformSettingsPage: React.FC = () => {
     </div>
   );
 };
+

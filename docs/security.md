@@ -27,3 +27,4 @@ In SewDesk, multi-tenancy is enforced strictly at the database layer using Postg
    - Platform administration (`/platform/*`) routes and database operations are guarded by `platform_admins`.
    - Business owners cannot promote themselves to platform administrators via profile edits.
    - Platform administrators do not automatically become members of tenant workspaces.
+

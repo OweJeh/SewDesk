@@ -20,3 +20,4 @@ export const PlatformAuditLogsPage: React.FC = () => {
     </div>
   );
 };
+

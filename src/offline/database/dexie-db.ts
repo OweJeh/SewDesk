@@ -9,7 +9,7 @@ import type {
   Order,
   Payment,
   BusinessInvitation
-} from '@/types';
+} from '../../types/index.ts';
 
 export interface SyncOperation {
   id: string;
@@ -53,3 +53,4 @@ export class SewDeskDatabase extends Dexie {
 }
 
 export const db = new SewDeskDatabase();
+

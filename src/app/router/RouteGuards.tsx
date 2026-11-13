@@ -50,3 +50,4 @@ export const RequireBusiness: React.FC<{ children: React.ReactNode }> = ({ child
 
   return <>{children}</>;
 };
+

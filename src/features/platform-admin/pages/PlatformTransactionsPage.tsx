@@ -21,3 +21,4 @@ export const PlatformTransactionsPage: React.FC = () => {
     </div>
   );
 };
+

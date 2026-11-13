@@ -22,7 +22,10 @@ import { OnboardingPage } from '@/features/onboarding/pages/OnboardingPage';
 // Business Workspace pages
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { CustomersPage } from '@/features/customers/pages/CustomersPage';
+import { NewCustomerPage } from '@/features/customers/pages/NewCustomerPage';
+import { CustomerDetailPage } from '@/features/customers/pages/CustomerDetailPage';
 import { MeasurementsPage } from '@/features/measurements/pages/MeasurementsPage';
+import { NewMeasurementSessionPage } from '@/features/measurements/pages/NewMeasurementSessionPage';
 import { OrdersPage } from '@/features/orders/pages/OrdersPage';
 import { PaymentsPage } from '@/features/payments/pages/PaymentsPage';
 import { StaffPage } from '@/features/staff/pages/StaffPage';
@@ -81,9 +84,11 @@ export const router = createBrowserRouter([
       { index: true, element: <Navigate to="/app/dashboard" replace /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'customers', element: <CustomersPage /> },
-      { path: 'customers/new', element: <CustomersPage /> },
+      { path: 'customers/new', element: <NewCustomerPage /> },
+      { path: 'customers/:id', element: <CustomerDetailPage /> },
+      { path: 'customers/:id/measurements', element: <CustomerDetailPage /> },
       { path: 'measurements', element: <MeasurementsPage /> },
-      { path: 'measurements/new', element: <MeasurementsPage /> },
+      { path: 'measurements/new', element: <NewMeasurementSessionPage /> },
       { path: 'orders', element: <OrdersPage /> },
       { path: 'orders/new', element: <OrdersPage /> },
       { path: 'payments', element: <PaymentsPage /> },

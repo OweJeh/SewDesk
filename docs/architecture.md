@@ -51,3 +51,4 @@ SewDesk is an offline-aware, multi-tenant digital workspace designed specificall
 - **State & Data Fetching:** React Context for Auth and Business tenancy, TanStack Query for caching and server synchronization.
 - **Storage & Offline:** IndexedDB via Dexie.js for persistent client cache and sync queue.
 - **Backend & Auth:** Supabase (PostgreSQL with RLS, GoTrue Auth, Realtime, Edge Functions).
+

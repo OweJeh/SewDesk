@@ -854,3 +854,4 @@ BEGIN
     ('Bust Separation', 'Distance between bust apex points', 'Torso', 'cm', 12.0, 30.0)
   ON CONFLICT (name) DO NOTHING;
 END $$;
+

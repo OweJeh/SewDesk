@@ -103,3 +103,4 @@ export function getRoleBadgeLabel(role: BusinessRole): string {
       return role;
   }
 }
+

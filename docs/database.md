@@ -67,3 +67,4 @@
 - **`subscriptions`**: Active business subscription contracts, validity windows, and statuses.
 - **`payment_transactions`**: Webhook-verified payment provider transactions (Paystack, Hubtel).
 - **`audit_logs`**: System-wide administrative action logs.
+

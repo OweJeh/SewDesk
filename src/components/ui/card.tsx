@@ -59,3 +59,4 @@ export const CardContent: React.FC<React.HTMLAttributes<HTMLDivElement>> = ({
   children,
   ...props
 }) => <div className={cn('pt-0', className)} {...props}>{children}</div>;
+

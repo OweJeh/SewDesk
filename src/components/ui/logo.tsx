@@ -88,3 +88,4 @@ export const Logo: React.FC<LogoProps> = ({
 
   return content;
 };
+

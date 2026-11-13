@@ -215,3 +215,4 @@ export interface NotificationItem {
   link_url?: string | null;
   created_at: string;
 }
+

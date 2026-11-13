@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "node --experimental-strip-types src/tests/phase1-acceptance.ts",
+    "test": "node --experimental-strip-types src/tests/phase1-acceptance.ts && node --experimental-strip-types src/tests/phase2-acceptance.ts",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },

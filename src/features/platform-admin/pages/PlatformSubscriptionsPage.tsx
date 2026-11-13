@@ -24,3 +24,4 @@ export const PlatformSubscriptionsPage: React.FC = () => {
     </div>
   );
 };
+
