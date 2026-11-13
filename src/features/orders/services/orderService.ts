@@ -4,6 +4,7 @@
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { db } from '@/offline/database/dexie-db';
+import { generateUUID } from '@/lib/utils';
 import type { Order, OrderStatus, Customer, MeasurementSet, Payment } from '@/types';
 
 export interface OrderStatusHistoryItem {
@@ -182,7 +183,7 @@ export const orderService = {
   // Create a new order
   async createOrder(input: CreateOrderInput): Promise<{ order: OrderWithDetails | null; error: Error | null }> {
     const isLive = isSupabaseConfigured();
-    const orderId = crypto.randomUUID();
+    const orderId = generateUUID();
     const now = new Date().toISOString();
 
     // Determine sequential order number
@@ -213,7 +214,7 @@ export const orderService = {
     };
 
     const initialHistory: OrderStatusHistoryItem = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       order_id: orderId,
       previous_status: null,
       new_status: 'not_started',
@@ -225,7 +226,7 @@ export const orderService = {
     let initialPayment: Payment | null = null;
     if (input.initial_deposit && input.initial_deposit > 0) {
       initialPayment = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         business_id: input.business_id,
         customer_id: input.customer_id,
         order_id: orderId,
@@ -318,7 +319,7 @@ export const orderService = {
     const previousStatus = currentOrder ? currentOrder.status : null;
 
     const historyItem: OrderStatusHistoryItem = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       order_id: orderId,
       previous_status: previousStatus,
       new_status: newStatus,

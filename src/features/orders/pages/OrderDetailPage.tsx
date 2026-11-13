@@ -8,7 +8,7 @@ import { useCurrentBusiness } from '@/features/businesses/context/BusinessContex
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { orderService, type OrderWithDetails } from '@/features/orders/services/orderService';
 import { measurementService } from '@/features/measurements/services/measurementService';
-import { formatCurrency, formatDate } from '@/lib/utils';
+import { formatCurrency, formatDate, generateUUID } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -136,7 +136,7 @@ export const OrderDetailPage: React.FC = () => {
       // In this version, payment is appended to order and database
       const now = new Date().toISOString();
       const newPayment = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         business_id: order.business_id,
         customer_id: order.customer_id,
         order_id: order.id,

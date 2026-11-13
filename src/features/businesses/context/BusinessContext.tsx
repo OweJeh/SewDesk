@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { db } from '@/offline/database/dexie-db';
 import { useAuth } from '@/features/auth/context/AuthContext';
+import { generateUUID } from '@/lib/utils';
 import type { Business, BusinessMember, BusinessInvitation, BusinessRole } from '@/types';
 
 interface CreateBusinessInput {
@@ -234,7 +235,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
-      const newBusinessId = crypto.randomUUID();
+      const newBusinessId = generateUUID();
       const now = new Date().toISOString();
 
       const newBusiness: Business = {
@@ -258,7 +259,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       };
 
       const ownerMember: BusinessMember = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         business_id: newBusinessId,
         profile_id: user.id,
         role: 'owner',
@@ -305,9 +306,9 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
-      const token = crypto.randomUUID();
+      const token = generateUUID();
       const newInvite: BusinessInvitation = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         business_id: currentBusiness.id,
         invited_email: email.trim().toLowerCase(),
         role,

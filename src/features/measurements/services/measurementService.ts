@@ -5,6 +5,7 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { db } from '@/offline/database/dexie-db';
 import { toCanonicalCm, fromCanonicalCm, compareSets } from '@/lib/calculations/measurements';
+import { generateUUID } from '@/lib/utils';
 import type { MeasurementSet, MeasurementValue, MeasurementUnit } from '@/types';
 
 export interface RecordedValuePayload {
@@ -155,7 +156,7 @@ export const measurementService = {
   // Save an immutable, completed measurement set
   async saveMeasurementSet(input: CreateMeasurementSetInput): Promise<{ set: MeasurementSet | null; error: Error | null }> {
     const isLive = isSupabaseConfigured();
-    const setId = crypto.randomUUID();
+    const setId = generateUUID();
     const now = new Date().toISOString();
 
     const newSet: MeasurementSet = {
@@ -171,7 +172,7 @@ export const measurementService = {
     };
 
     const valueRows: MeasurementValue[] = input.values.map((v) => ({
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       measurement_set_id: setId,
       measurement_definition_id: null,
       field_name: v.field_name,

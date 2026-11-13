@@ -4,6 +4,7 @@
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { db } from '@/offline/database/dexie-db';
+import { generateUUID } from '@/lib/utils';
 import type { Customer } from '@/types';
 
 export interface CustomerNoteItem {
@@ -146,7 +147,7 @@ export const customerService = {
       const now = new Date().toISOString();
 
       const newCustomer: Customer = {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         business_id: input.business_id,
         customer_number: customerNum,
         full_name: input.full_name.trim(),
@@ -235,7 +236,7 @@ export const customerService = {
   ): Promise<CustomerNoteItem> {
     const isLive = isSupabaseConfigured();
     const newNote: CustomerNoteItem = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       business_id: businessId,
       customer_id: customerId,
       note: noteText.trim(),
@@ -305,7 +306,7 @@ export const customerService = {
   }): Promise<void> {
     const isLive = isSupabaseConfigured();
     const fullItem: CustomerActivityItem = {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       ...item,
       created_at: new Date().toISOString(),
     };

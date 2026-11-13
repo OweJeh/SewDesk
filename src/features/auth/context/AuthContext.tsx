@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { db } from '@/offline/database/dexie-db';
+import { generateUUID } from '@/lib/utils';
 import type { Profile } from '@/types';
 import type { Session, User } from '@supabase/supabase-js';
 
@@ -151,7 +152,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Local persistence mode
       let existingProfile = await db.profiles.where('email').equalsIgnoreCase(email).first();
       if (!existingProfile) {
-        const newId = crypto.randomUUID();
+        const newId = generateUUID();
         existingProfile = {
           id: newId,
           full_name: email.split('@')[0],
@@ -211,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       // Local fallback mode
-      const newId = crypto.randomUUID();
+      const newId = generateUUID();
       const newProfile: Profile = {
         id: newId,
         full_name: fullName,

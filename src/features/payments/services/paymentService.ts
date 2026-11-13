@@ -4,6 +4,7 @@
 
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { db } from '@/offline/database/dexie-db';
+import { generateUUID } from '@/lib/utils';
 import type { Payment, PaymentMethod, Customer, Order } from '@/types';
 
 export interface PaymentWithDetails extends Payment {
@@ -82,7 +83,7 @@ export const paymentService = {
   // Record a payment transaction
   async recordPayment(input: RecordPaymentInput): Promise<{ payment: PaymentWithDetails | null; error: Error | null }> {
     const isLive = isSupabaseConfigured();
-    const id = crypto.randomUUID();
+    const id = generateUUID();
     const now = new Date().toISOString();
     const ref = input.reference || `REC-${Date.now().toString().slice(-6)}`;
 
