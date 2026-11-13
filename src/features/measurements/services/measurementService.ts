@@ -38,6 +38,17 @@ export interface MeasurementDraft {
 
 const DRAFT_STORAGE_PREFIX = 'sewdesk_measurement_draft_';
 
+const isValidUuid = (val?: string | null): boolean =>
+  Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
+
+const TEMPLATE_SLUG_NAME_MAP: Record<string, string> = {
+  male_bespoke: 'Standard Male Bespoke',
+  female_bespoke: 'Standard Female Bespoke',
+  children_bespoke: 'Children’s Tailoring Template',
+  trouser_specialist: 'Trouser Specialist',
+  shirt_kaftan: 'Shirt & Kaftan Specialist',
+};
+
 export const measurementService = {
   // Convert unit to canonical cm
   toCanonicalCm(value: number, unit: MeasurementUnit): number {
@@ -159,11 +170,36 @@ export const measurementService = {
     const setId = generateUUID();
     const now = new Date().toISOString();
 
+    // Resolve template_id: if a template slug like 'female_bespoke' was passed,
+    // resolve to its database UUID in measurement_templates, or null.
+    // PostgreSQL column 'measurement_sets.template_id' is type UUID; passing a non-UUID string throws an error.
+    let dbTemplateId: string | null = null;
+    if (input.template_id) {
+      if (isValidUuid(input.template_id)) {
+        dbTemplateId = input.template_id;
+      } else if (isLive) {
+        try {
+          const targetName = TEMPLATE_SLUG_NAME_MAP[input.template_id] || input.template_id;
+          const { data: tmpl } = await supabase
+            .from('measurement_templates')
+            .select('id')
+            .ilike('name', `%${targetName}%`)
+            .maybeSingle();
+
+          if (tmpl?.id && isValidUuid(tmpl.id)) {
+            dbTemplateId = tmpl.id;
+          }
+        } catch {
+          dbTemplateId = null;
+        }
+      }
+    }
+
     const newSet: MeasurementSet = {
       id: setId,
       business_id: input.business_id,
       customer_id: input.customer_id,
-      template_id: input.template_id || null,
+      template_id: dbTemplateId,
       garment_type: input.garment_type,
       session_name: input.session_name,
       fit_notes: input.fit_notes || null,
@@ -194,7 +230,7 @@ export const measurementService = {
       }
 
       // Local Dexie Persistence
-      await db.measurementSets.put(newSet);
+      await db.measurementSets.put({ ...newSet, template_id: dbTemplateId || input.template_id || null });
       for (const val of valueRows) {
         await db.measurementValues.put(val);
       }
@@ -202,7 +238,7 @@ export const measurementService = {
       // Clear draft
       this.clearDraft(input.customer_id);
 
-      return { set: { ...newSet, values: valueRows }, error: null };
+      return { set: { ...newSet, template_id: dbTemplateId || input.template_id || null, values: valueRows }, error: null };
     } catch (err) {
       return { set: null, error: err as Error };
     }

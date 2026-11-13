@@ -50,6 +50,9 @@ export interface OrderWithDetails extends Order {
 const _localOrders = new Map<string, OrderWithDetails>();
 const _localHistory = new Map<string, OrderStatusHistoryItem[]>();
 
+const isValidUuid = (val?: string | null): boolean =>
+  Boolean(val && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(val));
+
 export const orderService = {
   // Fetch all orders for a business
   async getOrders(businessId: string): Promise<OrderWithDetails[]> {
@@ -204,7 +207,7 @@ export const orderService = {
       total_price: Number(input.total_price) || 0,
       currency: input.currency || 'GHS',
       measurement_set_id: input.measurement_set_id,
-      assigned_to: input.assigned_to || null,
+      assigned_to: isValidUuid(input.assigned_to) ? input.assigned_to : null,
       due_date: input.due_date || null,
       status: 'not_started',
       notes: input.notes || null,

@@ -371,3 +371,4 @@ CREATE POLICY "Subscriptions manageable by owner or platform admin"
     public.is_business_owner(business_id) OR
     public.is_platform_admin()
   );
+
