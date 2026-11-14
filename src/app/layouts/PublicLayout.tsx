@@ -4,6 +4,7 @@ import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { ScrollToTop, BackToTopButton } from '@/components/common/ScrollToTop';
 
 export const PublicLayout: React.FC = () => {
   const { user } = useAuth();
@@ -27,6 +28,12 @@ export const PublicLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#111111]">
+      {/* Auto scroll-to-top on every page navigation */}
+      <ScrollToTop />
+
+      {/* Floating send-to-top button on scroll */}
+      <BackToTopButton />
+
       {/* Top Banner (Vanishes after 1 min) */}
       {showBanner && (
         <div className="bg-[#111111] text-white py-2 px-4 text-center text-xs font-medium flex items-center justify-center gap-2 transition-all duration-500">

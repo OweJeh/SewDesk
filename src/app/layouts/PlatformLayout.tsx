@@ -16,6 +16,7 @@ import {
   Sliders,
   HelpCircle
 } from 'lucide-react';
+import { ScrollToTop } from '@/components/common/ScrollToTop';
 
 export const PlatformLayout: React.FC = () => {
   const { profile, logout, isPlatformAdmin } = useAuth();
@@ -63,6 +64,7 @@ export const PlatformLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-neutral-950 text-neutral-100 flex flex-col md:flex-row">
+      <ScrollToTop />
       {/* Platform Operator Sidebar */}
       <aside className="w-full md:w-64 bg-black border-r border-neutral-800 flex flex-col shrink-0">
         <div className="p-5 border-b border-neutral-800 flex items-center justify-between">

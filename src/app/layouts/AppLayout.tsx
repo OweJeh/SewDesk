@@ -27,6 +27,7 @@ import {
   X,
   Layers,
 } from 'lucide-react';
+import { ScrollToTop } from '@/components/common/ScrollToTop';
 
 export const AppLayout: React.FC = () => {
   const { profile, logout, isPlatformAdmin, setDemoPlatformAdmin } = useAuth();
@@ -73,6 +74,9 @@ export const AppLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F5F5F5] flex flex-col md:flex-row text-[#111111]">
+      {/* Auto scroll-to-top on navigation */}
+      <ScrollToTop />
+
       {/* Sidebar for Desktop */}
       <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#E5E5E5] shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto">
         {/* Brand Header */}
