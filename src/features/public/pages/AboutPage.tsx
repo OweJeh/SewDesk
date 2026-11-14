@@ -1,7 +1,7 @@
 import React from 'react';
 import { Logo } from '@/components/ui/logo';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, ShieldCheck, Sparkles } from 'lucide-react';
+import { CheckCircle2, ShieldCheck } from 'lucide-react';
 
 export const AboutPage: React.FC = () => {
   return (
@@ -48,4 +48,3 @@ export const AboutPage: React.FC = () => {
     </div>
   );
 };
-

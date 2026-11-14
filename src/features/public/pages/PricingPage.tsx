@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle2, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { CheckCircle2, ArrowRight } from 'lucide-react';
 
 export const PricingPage: React.FC = () => {
   return (
@@ -103,4 +103,3 @@ export const PricingPage: React.FC = () => {
     </div>
   );
 };
-
