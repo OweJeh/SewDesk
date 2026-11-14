@@ -1,17 +1,18 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Logo } from '@/components/ui/logo';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/context/AuthContext';
-import { ArrowRight, ShieldCheck, Zap } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Zap, Menu, X } from 'lucide-react';
 import { ScrollToTop, BackToTopButton } from '@/components/common/ScrollToTop';
 
 export const PublicLayout: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
-  const [showBanner, setShowBanner] = React.useState(true);
+  const [showBanner, setShowBanner] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  React.useEffect(() => {
+  useEffect(() => {
     // Top banner vanishes automatically after 1 minute (60,000 ms)
     const timer = setTimeout(() => {
       setShowBanner(false);
@@ -19,6 +20,11 @@ export const PublicLayout: React.FC = () => {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
 
   const navLinks = [
     { label: 'Features', path: '/features' },
@@ -46,10 +52,18 @@ export const PublicLayout: React.FC = () => {
 
       {/* Main Navigation Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E5E5E5]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
-          <Logo showTagline size="md" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2">
+          {/* Logo — icon alone without wordmark on mobile, full wordmark on desktop */}
+          <div className="shrink-0 flex items-center">
+            <span className="sm:hidden">
+              <Logo size="md" iconOnly />
+            </span>
+            <span className="hidden sm:inline-block">
+              <Logo showTagline size="md" />
+            </span>
+          </div>
 
-          {/* Desktop Nav */}
+          {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
@@ -64,30 +78,60 @@ export const PublicLayout: React.FC = () => {
             ))}
           </nav>
 
-          {/* Auth Action Buttons */}
-          <div className="flex items-center gap-3">
+          {/* Auth Action Buttons & Mobile Menu Toggle */}
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             {user ? (
               <Link to="/app/dashboard">
-                <Button size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Open Workspace
+                <Button size="sm" rightIcon={<ArrowRight className="w-3.5 h-3.5" />}>
+                  <span className="hidden sm:inline">Open Workspace</span>
+                  <span className="sm:hidden">Workspace</span>
                 </Button>
               </Link>
             ) : (
               <>
                 <Link to="/login">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="px-2.5 sm:px-3 text-xs sm:text-sm font-semibold text-neutral-800">
                     Sign In
                   </Button>
                 </Link>
                 <Link to="/register">
-                  <Button size="sm" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                    Start Free
+                  <Button size="sm" className="px-3 sm:px-4 text-xs sm:text-sm font-semibold" rightIcon={<ArrowRight className="w-3.5 h-3.5 hidden sm:inline" />}>
+                    <span>Start Free</span>
                   </Button>
                 </Link>
               </>
             )}
+
+            {/* Mobile Menu Button for Navigation Links */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-1.5 sm:p-2 text-neutral-600 hover:text-black rounded-lg hover:bg-neutral-100 transition-colors"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile Navigation Drawer */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-[#E5E5E5] bg-white px-4 py-3 space-y-1 animate-in slide-in-from-top-2 duration-150">
+            {navLinks.map((link) => (
+              <Link
+                key={link.path}
+                to={link.path}
+                onClick={() => setMobileMenuOpen(false)}
+                className={`block px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === link.path
+                    ? 'bg-black text-white font-semibold'
+                    : 'text-neutral-700 hover:bg-[#F5F5F5] hover:text-black'
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* Page Content Slot */}
@@ -143,10 +187,13 @@ export const PublicLayout: React.FC = () => {
             </div>
           </div>
 
-          <div className="mt-12 pt-8 border-t border-[#E5E5E5] flex flex-col sm:flex-row items-center justify-between text-xs text-[#777777]">
+          <div className="mt-12 pt-8 border-t border-[#E5E5E5] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#777777]">
             <p>&copy; {new Date().getFullYear()} SewDesk Technologies. All rights reserved.</p>
-            <p className="mt-2 sm:mt-0 font-medium text-black">
-              MEASURE. MANAGE. CREATE.
+            <p className="text-xs text-neutral-600 font-medium">
+              Designed and built by <span className="font-semibold text-black">Dev_OJ</span>
+            </p>
+            <p className="mt-2 sm:mt-0 font-medium text-black tracking-wider text-[11px] uppercase">
+              Measure. Manage. Create.
             </p>
           </div>
         </div>

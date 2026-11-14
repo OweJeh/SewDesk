@@ -6,6 +6,8 @@ import { SewDeskSymbol } from '@/components/brand/SewDeskSymbol';
 export interface LogoProps {
   className?: string;
   showTagline?: boolean;
+  /** Hide the wordmark and tagline; render the icon symbol only. */
+  iconOnly?: boolean;
   size?: 'sm' | 'md' | 'lg' | 'xl';
   asLink?: boolean;
   to?: string;
@@ -15,6 +17,7 @@ export interface LogoProps {
 export const Logo: React.FC<LogoProps> = ({
   className,
   showTagline = false,
+  iconOnly = false,
   size = 'md',
   asLink = true,
   to = '/',
@@ -39,7 +42,7 @@ export const Logo: React.FC<LogoProps> = ({
   const taglineColor = isDark ? 'text-neutral-400' : 'text-[#777777]';
 
   const content = (
-    <div className={cn('inline-flex items-center gap-3 select-none', className)}>
+    <div className={cn('inline-flex items-center select-none', !iconOnly && 'gap-3', className)}>
       {/* Official Signature Needle & Stitched 'S' Symbol */}
       <div className="shrink-0 flex items-center justify-center">
         <SewDeskSymbol
@@ -48,27 +51,30 @@ export const Logo: React.FC<LogoProps> = ({
         />
       </div>
 
-      <div className="flex flex-col justify-center">
-        <span
-          className={cn(
-            'font-extrabold tracking-tight leading-none font-sans',
-            textSizes[size],
-            textColor
-          )}
-        >
-          SewDesk
-        </span>
-        {showTagline && (
+      {/* Wordmark + tagline (hidden when iconOnly) */}
+      {!iconOnly && (
+        <div className="flex flex-col justify-center">
           <span
             className={cn(
-              'text-[8.5px] font-semibold tracking-[0.25em] uppercase mt-1 font-sans',
-              taglineColor
+              'font-extrabold tracking-tight leading-none font-sans',
+              textSizes[size],
+              textColor
             )}
           >
-            Measure. Manage. Create.
+            SewDesk
           </span>
-        )}
-      </div>
+          {showTagline && (
+            <span
+              className={cn(
+                'text-[8.5px] font-semibold tracking-[0.25em] uppercase mt-1 font-sans',
+                taglineColor
+              )}
+            >
+              Measure. Manage. Create.
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 
