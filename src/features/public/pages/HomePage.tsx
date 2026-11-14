@@ -47,7 +47,7 @@ export const HomePage: React.FC = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
             <Link to="/register">
               <Button size="lg" className="w-full sm:w-auto" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Start Free Workspace (100 Clients Free)
+                Start Free Workspace
               </Button>
             </Link>
             <Link to="/features">
