@@ -438,8 +438,8 @@ export const MeasurementCardPage: React.FC = () => {
           {/* QR Code and Studio Stamp */}
           <div className="pt-4 border-t border-[#E5E5E5] flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-1.5 border border-[#E5E5E5] rounded-lg bg-white shrink-0">
-                <QRCodeSVG value={shareUrl} size={64} />
+              <div className="p-2 border border-[#E5E5E5] rounded-lg bg-white shrink-0">
+                <QRCodeSVG value={shareUrl} size={88} margin={1} errorCorrectionLevel="L" />
               </div>
               <div className="text-[10px] text-neutral-500 leading-tight">
                 <span className="font-bold text-black block">Digital Verification</span>

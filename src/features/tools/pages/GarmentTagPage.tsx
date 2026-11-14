@@ -220,7 +220,7 @@ export const GarmentTagPage: React.FC = () => {
             {/* QR Code and Scan Instruction */}
             <div className="flex items-center gap-4 pt-2">
               <div className="p-2 border border-black rounded-lg bg-white shrink-0">
-                <QRCodeSVG value={orderDeepLink} size={84} />
+                <QRCodeSVG value={orderDeepLink} size={96} margin={1} />
               </div>
               <div className="text-left space-y-1">
                 <span className="text-[10px] font-black uppercase tracking-wider text-black block">
