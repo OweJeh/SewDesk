@@ -8,6 +8,16 @@ import { ArrowRight, ShieldCheck, Zap } from 'lucide-react';
 export const PublicLayout: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const [showBanner, setShowBanner] = React.useState(true);
+
+  React.useEffect(() => {
+    // Top banner vanishes automatically after 1 minute (60,000 ms)
+    const timer = setTimeout(() => {
+      setShowBanner(false);
+    }, 60000);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const navLinks = [
     { label: 'Features', path: '/features' },
@@ -17,13 +27,15 @@ export const PublicLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-white text-[#111111]">
-      {/* Top Banner */}
-      <div className="bg-[#111111] text-white py-2 px-4 text-center text-xs font-medium flex items-center justify-center gap-2">
-        <span>First 100 registered customers are 100% free for all tailoring studios.</span>
-        <Link to="/register" className="underline font-semibold ml-1 hover:text-neutral-300">
-          Claim workspace &rarr;
-        </Link>
-      </div>
+      {/* Top Banner (Vanishes after 1 min) */}
+      {showBanner && (
+        <div className="bg-[#111111] text-white py-2 px-4 text-center text-xs font-medium flex items-center justify-center gap-2 transition-all duration-500">
+          <span>First 100 registered customers are 100% free for all tailoring studios.</span>
+          <Link to="/register" className="underline font-semibold ml-1 hover:text-neutral-300">
+            Claim workspace &rarr;
+          </Link>
+        </div>
+      )}
 
       {/* Main Navigation Header */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-[#E5E5E5]">

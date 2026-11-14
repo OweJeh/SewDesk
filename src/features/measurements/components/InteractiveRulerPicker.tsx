@@ -4,10 +4,8 @@ import { Button } from '@/components/ui/button';
 import {
   ChevronLeft,
   ChevronRight,
-  RotateCcw,
   SkipForward,
   Check,
-  Sparkles,
 } from 'lucide-react';
 
 interface InteractiveRulerPickerProps {
@@ -29,6 +27,53 @@ interface InteractiveRulerPickerProps {
   totalCount: number;
 }
 
+// ─────────────────────────────────────────────────────────────
+// Synthesized Mechanical Tactile Audio & Haptic Vibration Engine
+// ─────────────────────────────────────────────────────────────
+let audioContextInstance: AudioContext | null = null;
+
+const playHapticClickSound = (pitchMultiplier = 1) => {
+  try {
+    if (typeof window === 'undefined') return;
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!audioContextInstance) {
+      audioContextInstance = new AudioContextClass();
+    }
+    if (audioContextInstance.state === 'suspended') {
+      audioContextInstance.resume();
+    }
+
+    const now = audioContextInstance.currentTime;
+    const osc = audioContextInstance.createOscillator();
+    const gain = audioContextInstance.createGain();
+
+    // Tactile precision click sound (frequency sweep simulating mechanical dial detent)
+    osc.type = 'triangle';
+    osc.frequency.setValueAtTime(1400 * pitchMultiplier, now);
+    osc.frequency.exponentialRampToValueAtTime(220 * pitchMultiplier, now + 0.009);
+
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.009);
+
+    osc.connect(gain);
+    gain.connect(audioContextInstance.destination);
+
+    osc.start(now);
+    osc.stop(now + 0.01);
+
+    // Haptic vibration feedback for mobile devices
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(6);
+    }
+  } catch {
+    // Autoplay restrictions or unsupported devices gracefully ignored
+  }
+};
+
 export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
   measurementName,
   description,
@@ -48,9 +93,23 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
   totalCount,
 }) => {
   const rulerContainerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [startVal, setStartVal] = useState(0);
+  const lastTickValRef = useRef<number>(value);
+
+  // In-place direct input editing state
+  const [isEditing, setIsEditing] = useState(false);
+  const [editInputValue, setEditInputValue] = useState(value.toFixed(1));
+
+  // Sync direct input value when value changes outside editing
+  useEffect(() => {
+    if (!isEditing) {
+      setEditInputValue(value.toFixed(1));
+    }
+  }, [value, isEditing]);
 
   // Clamp helper
   const clamp = useCallback(
@@ -61,63 +120,75 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
     [min, max]
   );
 
-  // Fine & Coarse Adjustments
+  // Adjust helper with haptics
   const handleAdjust = (delta: number) => {
-    onValueChange(clamp(value + delta));
+    const newVal = clamp(value + delta);
+    if (newVal !== value) {
+      playHapticClickSound(Math.abs(delta) >= 1 ? 1.2 : 1.0);
+      onValueChange(newVal);
+    }
   };
 
-  // Dragging logic (Mouse & Touch)
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Direct edit commit
+  const handleCommitEdit = () => {
+    setIsEditing(false);
+    const parsed = parseFloat(editInputValue);
+    if (!isNaN(parsed)) {
+      const clamped = clamp(parsed);
+      onValueChange(clamped);
+      setEditInputValue(clamped.toFixed(1));
+      playHapticClickSound(1.1);
+    } else {
+      setEditInputValue(value.toFixed(1));
+    }
+  };
+
+  // Swift Pointer Events (zero touch latency & pointer capture)
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     setIsDragging(true);
     setStartX(e.clientX);
     setStartVal(value);
+    lastTickValRef.current = value;
+    e.currentTarget.setPointerCapture(e.pointerId);
   };
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length > 0) {
-      setIsDragging(true);
-      setStartX(e.touches[0].clientX);
-      setStartVal(value);
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDragging) return;
+    const diffX = e.clientX - startX;
+    // 12 pixels horizontal drag = 0.1 units (swift, high precision)
+    const deltaVal = -(diffX / 12) * stepFine;
+    const newVal = clamp(startVal + deltaVal);
+
+    if (Math.abs(newVal - lastTickValRef.current) >= stepFine - 0.001) {
+      playHapticClickSound(newVal % 1 === 0 ? 1.3 : 1.0);
+      lastTickValRef.current = newVal;
+    }
+    onValueChange(newVal);
+  };
+
+  const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    setIsDragging(false);
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      // release error ignore
     }
   };
 
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      const diffX = e.clientX - startX;
-      // 10 pixels drag = 0.1 units (sensitive & precise)
-      const deltaVal = -(diffX / 12) * stepFine;
-      onValueChange(clamp(startVal + deltaVal));
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (!isDragging || e.touches.length === 0) return;
-      const diffX = e.touches[0].clientX - startX;
-      const deltaVal = -(diffX / 12) * stepFine;
-      onValueChange(clamp(startVal + deltaVal));
-    };
-
-    const handleEnd = () => {
-      setIsDragging(false);
-    };
-
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleEnd);
-      window.addEventListener('touchmove', handleTouchMove);
-      window.addEventListener('touchend', handleEnd);
+  // Wheel / Trackpad scroll support
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const delta = (e.deltaY > 0 ? 1 : -1) * (e.shiftKey ? stepCoarse : stepFine);
+    const newVal = clamp(value + delta);
+    if (newVal !== value) {
+      playHapticClickSound(newVal % 1 === 0 ? 1.25 : 1.0);
+      onValueChange(newVal);
     }
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleEnd);
-      window.removeEventListener('touchmove', handleTouchMove);
-      window.removeEventListener('touchend', handleEnd);
-    };
-  }, [isDragging, startX, startVal, stepFine, clamp, onValueChange]);
+  };
 
   // Keyboard accessibility
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (isEditing) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowUp') {
       e.preventDefault();
       handleAdjust(e.shiftKey ? stepCoarse : stepFine);
@@ -133,15 +204,26 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
     }
   };
 
-  // Generate visual ruler tick marks around the current value
-  // We show 9 prominent ticks centered around current value
-  const offsets = [-4, -3, -2, -1, 0, 1, 2, 3, 4];
+  // Generate realistic physical measuring tape graduation marks
+  // Render a continuous spread of ticks: $\pm 3.0$ units with fractional 0.1 steps
+  const TICK_PX = 14; // pixels per 0.1 unit
+  const visibleSteps = 24; // 24 steps each direction
+  const ticks: { offsetVal: number; isWhole: boolean; isHalf: boolean }[] = [];
+
+  for (let i = -visibleSteps; i <= visibleSteps; i++) {
+    const tickVal = +(value + i * 0.1).toFixed(1);
+    if (tickVal >= min && tickVal <= max) {
+      const isWhole = Math.abs(tickVal - Math.round(tickVal)) < 0.01;
+      const isHalf = Math.abs(tickVal - Math.floor(tickVal) - 0.5) < 0.01;
+      ticks.push({ offsetVal: tickVal, isWhole, isHalf });
+    }
+  }
 
   return (
     <div
       tabIndex={0}
       onKeyDown={handleKeyDown}
-      className="bg-white border border-[#E5E5E5] rounded-2xl p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 outline-none focus:ring-1 focus:ring-black select-none"
+      className="bg-white border border-[#E5E5E5] rounded-3xl p-6 sm:p-8 shadow-sm flex flex-col justify-between space-y-6 outline-none focus:ring-1 focus:ring-black select-none"
     >
       {/* 1. Header with Step Progress */}
       <div className="flex items-center justify-between border-b border-[#E5E5E5] pb-4">
@@ -168,38 +250,55 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
         </div>
       </div>
 
-      {/* 2. Large Central Digital Measurement Readout */}
-      <div className="text-center py-4 space-y-4">
-        <div className="inline-flex items-baseline justify-center gap-3 px-8 py-4 bg-[#FAFAFA] border border-[#E5E5E5] rounded-2xl shadow-inner min-w-[260px]">
-          <span className="text-6xl sm:text-7xl font-extrabold font-mono tracking-tight text-black">
-            {value.toFixed(1)}
-          </span>
-          <span className="text-2xl font-bold uppercase text-neutral-400 font-mono">
+      {/* 2. Direct Tap-To-Edit Large Central Measurement Display */}
+      <div className="text-center py-2 space-y-3">
+        <div
+          onClick={() => {
+            setIsEditing(true);
+            setTimeout(() => inputRef.current?.select(), 25);
+          }}
+          title="Tap number to type directly"
+          className="inline-flex items-baseline justify-center gap-3 px-8 py-4 bg-[#FAFAFA] border-2 border-[#E5E5E5] hover:border-black/50 focus-within:border-black focus-within:ring-4 focus-within:ring-black/5 rounded-2xl shadow-inner min-w-[280px] sm:min-w-[320px] cursor-text transition-all group"
+        >
+          {isEditing ? (
+            <input
+              ref={inputRef}
+              type="text"
+              inputMode="decimal"
+              value={editInputValue}
+              onChange={(e) => setEditInputValue(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleCommitEdit();
+                } else if (e.key === 'Escape') {
+                  setEditInputValue(value.toFixed(1));
+                  setIsEditing(false);
+                }
+              }}
+              onBlur={handleCommitEdit}
+              className="w-40 sm:w-48 text-center text-6xl sm:text-7xl font-extrabold font-mono tracking-tight text-black bg-transparent outline-none border-b-2 border-black"
+              autoFocus
+            />
+          ) : (
+            <span className="text-6xl sm:text-7xl font-extrabold font-mono tracking-tight text-black group-hover:scale-[1.02] transition-transform">
+              {value.toFixed(1)}
+            </span>
+          )}
+          <span className="text-2xl font-bold uppercase text-neutral-400 font-mono select-none">
             {unit}
           </span>
         </div>
 
-        {/* Direct Numeric Input with Quick Reset */}
-        <div className="flex items-center justify-center gap-2 max-w-[220px] mx-auto">
-          <input
-            type="number"
-            step="0.1"
-            value={value}
-            onChange={(e) => {
-              const val = parseFloat(e.target.value);
-              if (!isNaN(val)) onValueChange(clamp(val));
-            }}
-            className="w-full text-center text-sm font-mono font-bold py-1.5 border border-[#E5E5E5] rounded-md focus:border-black focus:outline-none"
-            placeholder="Type value..."
-          />
-        </div>
+        <p className="text-[10px] text-neutral-400 font-medium tracking-wide">
+          Tap the big number to type directly &bull; Scroll or drag tape below
+        </p>
 
         {/* 3. Coarse (0.5) and Fine (0.1) Stepping Controls */}
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
+        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
           <button
             type="button"
             onClick={() => handleAdjust(-5.0)}
-            className="h-10 px-3 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-md text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
+            className="h-9 px-3 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-lg text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
             title="Subtract 5.0"
           >
             -5.0
@@ -207,7 +306,7 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
           <button
             type="button"
             onClick={() => handleAdjust(-stepCoarse)}
-            className="h-10 px-3.5 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-md text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
+            className="h-9 px-3 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-lg text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
             title="Coarse: -0.5"
           >
             -{stepCoarse}
@@ -215,18 +314,18 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
           <button
             type="button"
             onClick={() => handleAdjust(-stepFine)}
-            className="h-10 px-3.5 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-md text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
+            className="h-9 px-3 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-lg text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
             title="Fine: -0.1"
           >
             -{stepFine}
           </button>
 
-          <div className="w-px h-6 bg-neutral-300 mx-1.5" />
+          <div className="w-px h-5 bg-neutral-300 mx-1" />
 
           <button
             type="button"
             onClick={() => handleAdjust(stepFine)}
-            className="h-10 px-3.5 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-md text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
+            className="h-9 px-3 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-lg text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
             title="Fine: +0.1"
           >
             +{stepFine}
@@ -234,7 +333,7 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
           <button
             type="button"
             onClick={() => handleAdjust(stepCoarse)}
-            className="h-10 px-3.5 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-md text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
+            className="h-9 px-3 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-lg text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
             title="Coarse: +0.5"
           >
             +{stepCoarse}
@@ -242,58 +341,82 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
           <button
             type="button"
             onClick={() => handleAdjust(5.0)}
-            className="h-10 px-3 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-md text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
+            className="h-9 px-3 bg-[#F5F5F5] hover:bg-[#EAEAEA] active:scale-95 rounded-lg text-xs font-semibold text-neutral-800 transition-all cursor-pointer"
             title="Add 5.0"
           >
             +5.0
           </button>
         </div>
 
-        {/* 4. Touch & Mouse Draggable Ruler Canvas */}
+        {/* 4. Realistic Physical Tailor's Measuring Tape Canvas */}
         <div
           ref={rulerContainerRef}
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          className={`relative w-full h-24 bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl overflow-hidden flex items-center justify-center cursor-ew-resize shadow-inner select-none transition-colors ${
-            isDragging ? 'bg-neutral-100 ring-2 ring-black' : 'hover:border-neutral-400'
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onWheel={handleWheel}
+          style={{ touchAction: 'none' }}
+          className={`relative w-full h-28 rounded-2xl overflow-hidden flex items-center justify-center cursor-ew-resize select-none transition-all shadow-md ${
+            isDragging
+              ? 'ring-2 ring-black bg-[#FAF7F0]'
+              : 'border-2 border-[#D8D2C4] bg-gradient-to-b from-[#FDFBF7] via-[#F7F3EB] to-[#ECE7DC] hover:border-neutral-500'
           }`}
         >
-          {/* Center Marker Line & Needle Hairline */}
-          <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-black z-30 -translate-x-1/2 flex flex-col items-center justify-between pointer-events-none">
-            <div className="w-3 h-3 bg-black rotate-45 -translate-y-1.5 shadow-sm" />
-            <div className="w-3 h-3 bg-black rotate-45 translate-y-1.5 shadow-sm" />
+          {/* Subtle realistic tape top stitch hairline */}
+          <div className="absolute top-1 inset-x-0 h-px border-b border-dashed border-[#D2CBBC] pointer-events-none opacity-60" />
+          <div className="absolute bottom-1 inset-x-0 h-px border-t border-dashed border-[#D2CBBC] pointer-events-none opacity-60" />
+
+          {/* Left & Right Depth Vignette Shading (Tape Roller Illusion) */}
+          <div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-[#ECE7DC] via-[#ECE7DC]/70 to-transparent z-20 pointer-events-none" />
+          <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-[#ECE7DC] via-[#ECE7DC]/70 to-transparent z-20 pointer-events-none" />
+
+          {/* Center Precision Atelier Red Indicator Hairline with Triangles */}
+          <div className="absolute top-0 bottom-0 left-1/2 w-0.5 bg-red-600 z-30 -translate-x-1/2 flex flex-col items-center justify-between pointer-events-none shadow-sm">
+            <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-red-600" />
+            <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[6px] border-b-red-600" />
           </div>
 
-          {/* Calibrated Tick Marks with Numbers */}
-          <div className="flex items-end justify-center gap-3 text-[10px] font-mono text-neutral-400 w-full px-6 pointer-events-none">
-            {offsets.map((offset) => {
-              const tickVal = +(value + offset).toFixed(1);
-              const isCenter = offset === 0;
+          {/* Calibrated Graduation Marks (Responsive Tick Tape) */}
+          <div className="relative w-full h-full flex items-center justify-center pointer-events-none overflow-hidden">
+            {ticks.map((t) => {
+              const diffFromCenter = t.offsetVal - value;
+              const xPos = diffFromCenter * TICK_PX * 10; // 10 ticks per whole unit
 
               return (
                 <div
-                  key={offset}
-                  className={`flex flex-col items-center transition-all ${
-                    isCenter ? 'scale-115 font-bold text-black' : 'opacity-60'
-                  }`}
+                  key={t.offsetVal}
+                  className="absolute flex flex-col items-center justify-start top-3 transition-opacity duration-75"
+                  style={{
+                    transform: `translateX(${xPos}px)`,
+                    opacity: Math.abs(diffFromCenter) > 2.2 ? 0.2 : Math.abs(diffFromCenter) > 1.4 ? 0.5 : 1,
+                  }}
                 >
+                  {/* Graduation Tick Mark */}
                   <div
-                    className={`w-0.5 mb-1.5 transition-all ${
-                      isCenter
-                        ? 'h-10 bg-black'
-                        : offset % 2 === 0
-                        ? 'h-6 bg-neutral-400'
-                        : 'h-3.5 bg-neutral-300'
+                    className={`rounded-full transition-all ${
+                      t.isWhole
+                        ? 'h-11 w-[1.8px] bg-neutral-900'
+                        : t.isHalf
+                        ? 'h-7 w-[1.5px] bg-neutral-700'
+                        : 'h-4 w-[1px] bg-neutral-400'
                     }`}
                   />
-                  <span>{tickVal}</span>
+
+                  {/* Whole Number Labels */}
+                  {t.isWhole && (
+                    <span className="text-[11px] font-mono font-bold text-neutral-800 mt-1 select-none">
+                      {Math.round(t.offsetVal)}
+                    </span>
+                  )}
                 </div>
               );
             })}
           </div>
 
-          <div className="absolute bottom-1 right-2 text-[9px] text-neutral-400 pointer-events-none uppercase font-semibold">
-            Drag to adjust &bull; Shift for coarse
+          {/* Tactile drag instruction footer */}
+          <div className="absolute bottom-1 right-3 text-[9px] text-neutral-500 pointer-events-none uppercase font-semibold tracking-wider">
+            Swift Touch Tape &bull; Wheel Scrollable
           </div>
         </div>
       </div>
@@ -346,4 +469,3 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
     </div>
   );
 };
-

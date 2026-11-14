@@ -49,47 +49,47 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
   const primaryColor = isDark ? '#FFFFFF' : '#000000';
   const secondaryColor = isDark ? '#888888' : '#777777';
 
-  // Responsive size presets (default 'compact' is 4x smaller than original 256px)
+  // Responsive standard size presets (optically centered and responsive across mobile & desktop)
   const sizeConfig =
     typeof size === 'number'
       ? {
           symbolClass: '',
           symbolStyle: { width: size, height: Math.round(size * (360 / 330)) },
           symbolPx: size,
-          titleClass: 'text-xl sm:text-2xl font-bold tracking-tight',
-          brandLineClass: 'text-[7.5px] sm:text-[8px] font-semibold tracking-[0.28em] mt-1.5',
-          spacingClass: 'mt-2 sm:mt-2.5',
-          containerClass: '-mt-4 sm:-mt-6 max-w-xs px-4',
+          titleClass: 'text-2xl sm:text-3xl font-extrabold tracking-tight',
+          brandLineClass: 'text-[8px] sm:text-[9.5px] font-semibold tracking-[0.28em] mt-1.5',
+          spacingClass: 'mt-3 sm:mt-4',
+          containerClass: 'max-w-xs px-4',
         }
       : size === 'large'
       ? {
-          symbolClass: 'w-56 h-64 sm:w-64 sm:h-72',
+          symbolClass: 'w-40 h-[175px] sm:w-52 sm:h-[227px]',
           symbolStyle: undefined,
-          symbolPx: 240,
+          symbolPx: 200,
           titleClass: 'text-3xl sm:text-4xl font-extrabold tracking-tight',
-          brandLineClass: 'text-[9.5px] sm:text-[10px] font-semibold tracking-[0.3em] mt-2.5',
-          spacingClass: 'mt-3 sm:mt-5',
-          containerClass: '-mt-6 sm:-mt-10 max-w-sm px-6',
+          brandLineClass: 'text-[9.5px] sm:text-[10.5px] font-semibold tracking-[0.3em] mt-2',
+          spacingClass: 'mt-4 sm:mt-5',
+          containerClass: 'max-w-sm px-6',
         }
       : size === 'medium'
       ? {
-          symbolClass: 'w-28 h-32 sm:w-32 sm:h-36',
+          symbolClass: 'w-28 h-[122px] sm:w-36 sm:h-[157px]',
           symbolStyle: undefined,
-          symbolPx: 128,
+          symbolPx: 130,
           titleClass: 'text-2xl sm:text-3xl font-extrabold tracking-tight',
-          brandLineClass: 'text-[8.5px] sm:text-[9.5px] font-semibold tracking-[0.3em] mt-2',
-          spacingClass: 'mt-2.5 sm:mt-3.5',
-          containerClass: '-mt-5 sm:-mt-8 max-w-xs px-5',
+          brandLineClass: 'text-[8.5px] sm:text-[9.5px] font-semibold tracking-[0.28em] mt-2',
+          spacingClass: 'mt-3 sm:mt-4',
+          containerClass: 'max-w-xs px-5',
         }
       : {
-          // 'compact' (Default) — 4 times smaller in dimension (~64px x 72px)
-          symbolClass: 'w-16 h-18 sm:w-18 sm:h-20',
+          // 'compact' (Default standard size) — balanced and crisp on mobile & desktop
+          symbolClass: 'w-20 h-[87px] sm:w-24 sm:h-[105px]',
           symbolStyle: undefined,
-          symbolPx: 64,
-          titleClass: 'text-xl sm:text-2xl font-bold tracking-tight',
-          brandLineClass: 'text-[7.5px] sm:text-[8px] font-semibold tracking-[0.28em] mt-1.5',
-          spacingClass: 'mt-2 sm:mt-2.5',
-          containerClass: '-mt-4 sm:-mt-6 max-w-xs px-4',
+          symbolPx: 88,
+          titleClass: 'text-2xl sm:text-3xl font-extrabold tracking-tight',
+          brandLineClass: 'text-[8px] sm:text-[9px] font-semibold tracking-[0.28em] mt-1.5',
+          spacingClass: 'mt-3 sm:mt-4',
+          containerClass: 'max-w-xs px-4',
         };
 
   const handleDismiss = () => {
@@ -126,12 +126,12 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.45, ease: 'easeInOut' } }}
           style={{ backgroundColor: bgColor }}
-          className={`fixed inset-0 z-50 flex flex-col items-center justify-center select-none overflow-hidden ${className}`}
+          className={`fixed inset-0 min-h-[100dvh] z-50 flex flex-col items-center justify-center p-4 sm:p-6 select-none overflow-hidden ${className}`}
           role="dialog"
           aria-label="SewDesk Application Splash Screen"
         >
           {/* Top Control Bar (Skip / Replay controls) */}
-          <div className="absolute top-6 right-6 flex items-center gap-2 z-10">
+          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 z-10">
             <button
               onClick={handleReplay}
               title="Replay Animation"
@@ -264,7 +264,7 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
             animate={{ opacity: 0.6 }}
             transition={{ delay: prefersReducedMotion ? 0.6 : 4.6, duration: 0.6 }}
             style={{ color: secondaryColor }}
-            className="absolute bottom-6 text-[10px] sm:text-xs font-mono tracking-widest uppercase text-center"
+            className="absolute bottom-6 sm:bottom-8 text-[10px] sm:text-xs font-mono tracking-widest uppercase text-center"
           >
             Digital Tailoring Workspace
           </motion.div>
