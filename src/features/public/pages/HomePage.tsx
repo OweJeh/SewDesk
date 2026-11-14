@@ -23,12 +23,12 @@ export const HomePage: React.FC = () => {
         {/* Tailor's Desk Background */}
         <div className="absolute inset-0 -top-8 -bottom-8 pointer-events-none overflow-hidden select-none rounded-3xl">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40"
             style={{
               backgroundImage: 'url(/images/tailor-desk-bg.jpg)',
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/50 to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/70 via-white/40 to-white" />
         </div>
 
         <div className="relative z-10 space-y-8">
