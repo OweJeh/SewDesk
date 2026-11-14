@@ -26,6 +26,11 @@ import {
   Menu,
   X,
   Layers,
+  Calculator,
+  Camera,
+  Tag,
+  DollarSign,
+  Share2,
 } from 'lucide-react';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 
@@ -61,6 +66,14 @@ export const AppLayout: React.FC = () => {
     { label: 'Reports', path: '/app/reports', icon: BarChart3 },
     { label: 'Subscription', path: '/app/subscription', icon: Sparkles },
     { label: 'Settings', path: '/app/settings', icon: Settings },
+  ];
+
+  const toolItems = [
+    { label: 'Fabric Estimator', path: '/app/calculator', icon: Calculator },
+    { label: 'Photo Vault', path: '/app/photos', icon: Camera },
+    { label: 'Garment Bag Tags', path: '/app/garment-tag', icon: Tag },
+    { label: 'Commission Payroll', path: '/app/commissions', icon: DollarSign },
+    { label: 'Measurement Cards', path: '/app/measurement-card', icon: Share2 },
   ];
 
   const handleLogout = async () => {
@@ -147,6 +160,28 @@ export const AppLayout: React.FC = () => {
         {/* Navigation Items */}
         <nav className="flex-1 px-3 py-4 space-y-1">
           {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname.startsWith(item.path);
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium transition-colors ${
+                  isActive
+                    ? 'bg-black text-white shadow-sm'
+                    : 'text-neutral-700 hover:bg-[#F5F5F5] hover:text-black'
+                }`}
+              >
+                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-neutral-500'}`} />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+
+          <div className="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+            Workshop Tools
+          </div>
+          {toolItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
             return (
@@ -354,6 +389,26 @@ export const AppLayout: React.FC = () => {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-white border-b border-[#E5E5E5] px-4 py-3 space-y-1">
             {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname.startsWith(item.path);
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium ${
+                    isActive ? 'bg-black text-white' : 'text-neutral-700 hover:bg-neutral-100'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+            <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+              Workshop Tools
+            </div>
+            {toolItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.path);
               return (

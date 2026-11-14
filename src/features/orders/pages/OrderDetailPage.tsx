@@ -29,8 +29,14 @@ import {
   Ruler,
   ChevronRight,
   ShieldCheck,
+  Tag,
+  Camera,
+  Upload,
+  Trash2,
 } from 'lucide-react';
-import type { OrderStatus, PaymentMethod, MeasurementUnit } from '@/types';
+import { WhatsAppDispatcher } from '@/components/common/WhatsAppDispatcher';
+import { db } from '@/offline/database/dexie-db';
+import type { OrderStatus, PaymentMethod, MeasurementUnit, OrderAttachment } from '@/types';
 
 const PIPELINE_STAGES: { status: OrderStatus; label: string; step: number }[] = [
   { status: 'not_started', label: 'Not Started', step: 1 },
@@ -66,6 +72,45 @@ export const OrderDetailPage: React.FC = () => {
   const [paymentNote, setPaymentNote] = useState('');
   const [recordingPayment, setRecordingPayment] = useState(false);
 
+  // Photos & Attachments (Fabric Swatches & Style Inspiration)
+  const [attachments, setAttachments] = useState<OrderAttachment[]>([]);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [attachmentType, setAttachmentType] = useState<OrderAttachment['attachment_type']>('fabric_swatch');
+
+  const loadAttachments = async () => {
+    if (!id) return;
+    try {
+      const rows = await db.orderAttachments.where('order_id').equals(id).toArray();
+      setAttachments(rows);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleAttachmentUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !order) return;
+    setUploadingAttachment(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string;
+      const record: OrderAttachment = {
+        id: generateUUID(),
+        business_id: order.business_id,
+        order_id: order.id,
+        file_url: dataUrl,
+        attachment_type: attachmentType,
+        caption: null,
+        created_at: new Date().toISOString(),
+      };
+      await db.orderAttachments.add(record);
+      setAttachments((prev) => [...prev, record]);
+      setUploadingAttachment(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
   const loadOrder = async () => {
     if (!id) return;
     setLoading(true);
@@ -79,6 +124,7 @@ export const OrderDetailPage: React.FC = () => {
 
   useEffect(() => {
     loadOrder();
+    loadAttachments();
   }, [id]);
 
   if (loading) {
@@ -121,6 +167,30 @@ export const OrderDetailPage: React.FC = () => {
       transitionNote.trim() || undefined,
       user?.id || 'staff'
     );
+
+    // Auto-record piece-rate commission if moving to ready
+    if (targetStatus === 'ready' && order.status !== 'ready') {
+      try {
+        const rates = JSON.parse(localStorage.getItem('sewdesk_piece_rates') || '{}');
+        const garmentType = order.garment_type || 'Trousers';
+        const rate = rates[garmentType] || rates['default'] || 40;
+        await db.commissions.add({
+          id: generateUUID(),
+          business_id: order.business_id,
+          staff_id: user?.id || 'staff',
+          staff_name: user?.user_metadata?.full_name || 'Workshop Tailor',
+          order_id: order.id,
+          order_number: order.order_number,
+          garment_type: garmentType,
+          amount: Number(rate),
+          status: 'pending',
+          created_at: new Date().toISOString(),
+        });
+      } catch (err) {
+        console.warn('Could not record commission', err);
+      }
+    }
+
     setIsStatusModalOpen(false);
     setTransitionNote('');
     setUpdatingStatus(false);
@@ -215,7 +285,16 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link to={`/app/garment-tag?orderId=${order.id}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              leftIcon={<Tag className="w-4 h-4" />}
+            >
+              Bag Tag & QR
+            </Button>
+          </Link>
           <Button
             variant="outline"
             size="sm"
@@ -470,17 +549,16 @@ export const OrderDetailPage: React.FC = () => {
                       {order.customer.phone}
                     </a>
                   </div>
-                  {order.customer.whatsapp && (
-                    <a
-                      href={`https://wa.me/${order.customer.whatsapp.replace(/[^0-9]/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 font-semibold rounded-lg text-xs transition-colors"
-                    >
-                      <MessageSquare className="w-3.5 h-3.5" />
-                      Chat on WhatsApp
-                    </a>
-                  )}
+                  <WhatsAppDispatcher
+                    customerName={order.customer?.full_name || 'Client'}
+                    phone={order.customer?.phone}
+                    whatsapp={order.customer?.whatsapp}
+                    studioName={currentBusiness?.business_name}
+                    garmentType={order.garment_type || 'Custom Outfit'}
+                    fittingDate={order.due_date}
+                    balance={order.balance}
+                    currency={currency}
+                  />
                 </div>
               )}
             </CardContent>
@@ -549,6 +627,82 @@ export const OrderDetailPage: React.FC = () => {
                 >
                   Record Payment
                 </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Fabric & Inspiration Photo Gallery */}
+          <Card className="border-[#E5E5E5] print:hidden">
+            <div className="p-4 border-b border-[#E5E5E5] bg-[#FAFAFA] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Camera className="w-4 h-4 text-black" />
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider">
+                  Photos ({attachments.length})
+                </h2>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <select
+                  value={attachmentType}
+                  onChange={(e) => setAttachmentType(e.target.value as any)}
+                  className="text-[10px] border border-[#E5E5E5] rounded px-1.5 py-0.5 bg-white text-black"
+                >
+                  <option value="fabric_swatch">Swatch</option>
+                  <option value="style_inspiration">Inspiration</option>
+                  <option value="pattern">Pattern</option>
+                </select>
+                <input
+                  type="file"
+                  id="order-photo-file-input"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleAttachmentUpload}
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-6 text-[10px] px-2"
+                  onClick={() => document.getElementById('order-photo-file-input')?.click()}
+                  disabled={uploadingAttachment}
+                >
+                  <Plus className="w-3 h-3 mr-0.5" />
+                  {uploadingAttachment ? '...' : 'Snap'}
+                </Button>
+              </div>
+            </div>
+            <CardContent className="p-4">
+              {attachments.length === 0 ? (
+                <div className="text-center py-6 text-neutral-400">
+                  <p className="text-xs">No photos attached to this order yet.</p>
+                  <p className="text-[10px] text-neutral-400 mt-0.5">Snap fabric swatch or style inspiration.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {attachments.map((att) => (
+                    <div
+                      key={att.id}
+                      className="relative group rounded-lg overflow-hidden border border-[#E5E5E5] aspect-square bg-[#F5F5F5]"
+                    >
+                      <img
+                        src={att.file_url}
+                        alt={att.attachment_type}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-0 inset-x-0 bg-black/70 p-1 text-[8px] text-white capitalize truncate">
+                        {att.attachment_type.replace('_', ' ')}
+                      </div>
+                      <button
+                        onClick={async () => {
+                          await db.orderAttachments.delete(att.id);
+                          setAttachments((prev) => prev.filter((a) => a.id !== att.id));
+                        }}
+                        className="absolute top-1 right-1 p-0.5 bg-white/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <Trash2 className="w-3 h-3 text-red-500" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>

@@ -8,7 +8,10 @@ import type {
   MeasurementValue,
   Order,
   Payment,
-  BusinessInvitation
+  BusinessInvitation,
+  OrderAttachment,
+  CustomerPosturePhoto,
+  TailorCommission
 } from '../../types/index.ts';
 
 export interface SyncOperation {
@@ -33,6 +36,9 @@ export class SewDeskDatabase extends Dexie {
   measurementValues!: Table<MeasurementValue, string>;
   orders!: Table<Order, string>;
   payments!: Table<Payment, string>;
+  orderAttachments!: Table<OrderAttachment, string>;
+  customerPhotos!: Table<CustomerPosturePhoto, string>;
+  commissions!: Table<TailorCommission, string>;
   syncQueue!: Table<SyncOperation, string>;
 
   constructor() {
@@ -48,6 +54,11 @@ export class SewDeskDatabase extends Dexie {
       orders: 'id, business_id, customer_id, order_number, status',
       payments: 'id, business_id, order_id, customer_id',
       syncQueue: 'id, businessId, status, createdAt',
+    });
+    this.version(2).stores({
+      orderAttachments: 'id, business_id, order_id, created_at',
+      customerPhotos: 'id, business_id, customer_id, view_angle, created_at',
+      commissions: 'id, business_id, staff_id, order_id, status, created_at',
     });
   }
 }

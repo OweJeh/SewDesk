@@ -36,6 +36,11 @@ import { ReportsPage } from '@/features/reports/pages/ReportsPage';
 import { SubscriptionPage } from '@/features/subscriptions/pages/SubscriptionPage';
 import { NotificationsPage } from '@/features/notifications/pages/NotificationsPage';
 import { SettingsPage } from '@/features/settings/pages/SettingsPage';
+import { YardageEstimatorPage } from '@/features/tools/pages/YardageEstimatorPage';
+import { PhotoVaultPage } from '@/features/tools/pages/PhotoVaultPage';
+import { GarmentTagPage } from '@/features/tools/pages/GarmentTagPage';
+import { CommissionsPage } from '@/features/tools/pages/CommissionsPage';
+import { MeasurementCardPage } from '@/features/tools/pages/MeasurementCardPage';
 
 // Platform Admin pages
 import { PlatformDashboardPage } from '@/features/platform-admin/pages/PlatformDashboardPage';
@@ -61,6 +66,7 @@ export const router = createBrowserRouter([
       { path: 'register', element: <RegisterPage /> },
       { path: 'forgot-password', element: <ForgotPasswordPage /> },
       { path: 'splash', element: <SplashDemoPage /> },
+      { path: 'share/measurements', element: <MeasurementCardPage /> },
     ],
   },
 
@@ -100,6 +106,11 @@ export const router = createBrowserRouter([
       { path: 'staff', element: <StaffPage /> },
       { path: 'reports', element: <ReportsPage /> },
       { path: 'subscription', element: <SubscriptionPage /> },
+      { path: 'calculator', element: <YardageEstimatorPage /> },
+      { path: 'photos', element: <PhotoVaultPage /> },
+      { path: 'garment-tag', element: <GarmentTagPage /> },
+      { path: 'commissions', element: <CommissionsPage /> },
+      { path: 'measurement-card', element: <MeasurementCardPage /> },
       { path: 'notifications', element: <NotificationsPage /> },
       { path: 'settings', element: <SettingsPage /> },
     ],

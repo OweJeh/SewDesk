@@ -216,3 +216,38 @@ export interface NotificationItem {
   created_at: string;
 }
 
+export interface OrderAttachment {
+  id: string;
+  business_id: string;
+  order_id: string;
+  file_url: string;
+  attachment_type: 'fabric_swatch' | 'style_inspiration' | 'pattern';
+  caption?: string | null;
+  uploaded_by?: string;
+  created_at: string;
+}
+
+export interface CustomerPosturePhoto {
+  id: string;
+  business_id: string;
+  customer_id: string;
+  photo_url: string;
+  view_angle: 'front' | 'side' | 'back';
+  notes?: string | null;
+  created_at: string;
+}
+
+export interface TailorCommission {
+  id: string;
+  business_id: string;
+  staff_id: string;
+  staff_name: string;
+  order_id: string;
+  order_number: string;
+  garment_type: string;
+  amount: number;
+  status: 'pending' | 'paid';
+  paid_at?: string | null;
+  created_at: string;
+}
+

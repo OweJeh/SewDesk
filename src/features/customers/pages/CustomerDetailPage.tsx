@@ -6,10 +6,14 @@ import { customerService, type CustomerNoteItem, type CustomerActivityItem } fro
 import { measurementService } from '@/features/measurements/services/measurementService';
 import { orderService, type OrderWithDetails } from '@/features/orders/services/orderService';
 import { MeasurementComparisonModal } from '@/features/measurements/components/MeasurementComparisonModal';
-import type { Customer, MeasurementSet, MeasurementUnit } from '@/types';
+import type { Customer, MeasurementSet, MeasurementUnit, CustomerPosturePhoto } from '@/types';
+import { WhatsAppDispatcher } from '@/components/common/WhatsAppDispatcher';
+import { db } from '@/offline/database/dexie-db';
+import { generateUUID } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   Users,
@@ -32,6 +36,9 @@ import {
   ChevronRight,
   MessageSquare,
   ShieldCheck,
+  Camera,
+  Share2,
+  Trash2,
 } from 'lucide-react';
 
 export const CustomerDetailPage: React.FC = () => {
@@ -41,13 +48,18 @@ export const CustomerDetailPage: React.FC = () => {
   const navigate = useNavigate();
 
   const [customer, setCustomer] = useState<Customer | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'measurements' | 'orders' | 'payments' | 'notes' | 'activity'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'measurements' | 'orders' | 'payments' | 'notes' | 'activity' | 'posture'>('overview');
   const [measurementSets, setMeasurementSets] = useState<MeasurementSet[]>([]);
   const [notes, setNotes] = useState<CustomerNoteItem[]>([]);
   const [activities, setActivities] = useState<CustomerActivityItem[]>([]);
   const [customerOrders, setCustomerOrders] = useState<OrderWithDetails[]>([]);
   const [newNoteText, setNewNoteText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Posture photos
+  const [posturePhotos, setPosturePhotos] = useState<CustomerPosturePhoto[]>([]);
+  const [uploadAngle, setUploadAngle] = useState<'front' | 'side' | 'back'>('front');
+  const [uploadingPosture, setUploadingPosture] = useState(false);
 
   // Comparison State
   const [compareModalOpen, setCompareModalOpen] = useState(false);
@@ -86,7 +98,33 @@ export const CustomerDetailPage: React.FC = () => {
       setCustomerOrders(forThisCust);
       setIsLoading(false);
     });
+
+    db.customerPhotos.where('customer_id').equals(id).toArray().then(setPosturePhotos);
   }, [id]);
+
+  const handlePostureUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !customer) return;
+    setUploadingPosture(true);
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const dataUrl = ev.target?.result as string;
+      const record: CustomerPosturePhoto = {
+        id: generateUUID(),
+        business_id: customer.business_id,
+        customer_id: customer.id,
+        photo_url: dataUrl,
+        view_angle: uploadAngle,
+        notes: null,
+        created_at: new Date().toISOString(),
+      };
+      await db.customerPhotos.add(record);
+      setPosturePhotos((prev) => [...prev, record]);
+      setUploadingPosture(false);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,9 +205,14 @@ export const CustomerDetailPage: React.FC = () => {
                   <Phone className="w-3.5 h-3.5 text-neutral-400" />
                   <span>{customer.phone}</span>
                 </div>
-                {customer.whatsapp && (
-                  <div className="flex items-center gap-1.5 text-green-700">
-                    <span>WA: {customer.whatsapp}</span>
+                {(customer.whatsapp || customer.phone) && (
+                  <div className="w-36">
+                    <WhatsAppDispatcher
+                      customerName={customer.full_name}
+                      phone={customer.phone}
+                      whatsapp={customer.whatsapp}
+                      studioName={currentBusiness?.business_name}
+                    />
                   </div>
                 )}
                 {customer.email && (
@@ -188,7 +231,12 @@ export const CustomerDetailPage: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Link to={`/app/measurement-card?customerId=${customer.id}`}>
+              <Button size="sm" variant="outline" leftIcon={<Share2 className="w-3.5 h-3.5" />}>
+                Measurement Card
+              </Button>
+            </Link>
             <Link to={`/app/measurements/new?customerId=${customer.id}`}>
               <Button size="sm" leftIcon={<Ruler className="w-3.5 h-3.5" />}>
                 Record Measurement
@@ -202,11 +250,12 @@ export const CustomerDetailPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 6 Tab Headers */}
+        {/* 7 Tab Headers */}
         <div className="flex items-center gap-1 border-t border-[#E5E5E5] pt-4 overflow-x-auto text-xs">
           {[
             { id: 'overview', label: 'Overview', icon: Users },
             { id: 'measurements', label: `Measurements (${measurementSets.length})`, icon: Ruler },
+            { id: 'posture', label: `Posture (${posturePhotos.length})`, icon: Camera },
             { id: 'orders', label: `Orders (${customerOrders.length})`, icon: Scissors },
             { id: 'payments', label: `Payments (${allCustomerPayments.length})`, icon: CreditCard },
             { id: 'notes', label: `Notes (${notes.length})`, icon: FileText },
@@ -474,6 +523,88 @@ export const CustomerDetailPage: React.FC = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* TAB: POSTURE PHOTOS */}
+      {activeTab === 'posture' && (
+        <Card className="border-[#E5E5E5]">
+          <div className="p-4 border-b border-[#E5E5E5] bg-[#FAFAFA] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-bold text-black uppercase tracking-wider">
+                Client Posture & Asymmetry Photos ({posturePhotos.length})
+              </h3>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Front, side, and back posture photos ensure cutters cut armholes and shoulder pitch with precision.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={uploadAngle}
+                onChange={(e) => setUploadAngle(e.target.value as any)}
+                className="text-xs border border-[#E5E5E5] rounded px-2 py-1.5 bg-white text-black font-medium"
+              >
+                <option value="front">Front View</option>
+                <option value="side">Side View</option>
+                <option value="back">Back View</option>
+              </select>
+              <input
+                type="file"
+                id="customer-posture-file-upload"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handlePostureUpload}
+              />
+              <Button
+                size="sm"
+                onClick={() => document.getElementById('customer-posture-file-upload')?.click()}
+                disabled={uploadingPosture}
+                leftIcon={<Camera className="w-3.5 h-3.5" />}
+              >
+                {uploadingPosture ? 'Saving...' : 'Snap View'}
+              </Button>
+            </div>
+          </div>
+
+          <CardContent className="p-6">
+            {posturePhotos.length === 0 ? (
+              <div className="text-center py-12 text-neutral-400 space-y-2">
+                <Camera className="w-10 h-10 mx-auto opacity-30" />
+                <p className="text-sm font-semibold text-neutral-600">No Posture Photos Yet</p>
+                <p className="text-xs max-w-md mx-auto text-neutral-400">
+                  Every body is asymmetrical. Snapping front, side, and back posture photos allows workshop staff to make accurate shoulder slope and silhouette adjustments without guessing.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                {posturePhotos.map((p) => (
+                  <div
+                    key={p.id}
+                    className="relative group rounded-xl overflow-hidden border border-[#E5E5E5] aspect-square bg-[#F5F5F5]"
+                  >
+                    <img src={p.photo_url} alt={p.view_angle} className="w-full h-full object-cover" />
+                    <div className="absolute bottom-0 inset-x-0 bg-black/75 p-2 text-white">
+                      <span className="text-xs font-bold uppercase block tracking-wider">
+                        {p.view_angle} View
+                      </span>
+                      <span className="text-[9px] text-white/70">{formatDate(p.created_at)}</span>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        await db.customerPhotos.delete(p.id);
+                        setPosturePhotos((prev) => prev.filter((item) => item.id !== p.id));
+                      }}
+                      className="absolute top-2 right-2 p-1 bg-white/90 rounded-full opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-50"
+                      title="Delete photo"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
 
       {/* TAB 3: ORDERS */}
