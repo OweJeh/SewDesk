@@ -31,6 +31,8 @@ interface BusinessContextType {
   updateBusiness: (updates: Partial<Business>) => Promise<{ error: Error | null }>;
   inviteStaff: (email: string, role: BusinessRole) => Promise<{ error: Error | null }>;
   cancelInvitation: (invitationId: string) => Promise<{ error: Error | null }>;
+  activateSubscription: () => Promise<{ error: Error | null }>;
+  cancelSubscription: () => Promise<{ error: Error | null }>;
   refreshBusiness: () => Promise<void>;
 }
 
@@ -451,6 +453,68 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const activateSubscription = async (): Promise<{ error: Error | null }> => {
+    if (!currentBusiness) {
+      return { error: new Error('No active business selected.') };
+    }
+
+    try {
+      const now = new Date().toISOString();
+      const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+      if (isLive) {
+        const { error } = await supabase.from('subscriptions').upsert(
+          {
+            business_id: currentBusiness.id,
+            plan_id: 'pro_studio',
+            status: 'active',
+            started_at: now,
+            expires_at: expiresAt,
+            updated_at: now,
+          },
+          { onConflict: 'business_id' }
+        );
+        if (error) {
+          await supabase.from('subscriptions').insert({
+            business_id: currentBusiness.id,
+            plan_id: 'pro_studio',
+            status: 'active',
+            started_at: now,
+            expires_at: expiresAt,
+          });
+        }
+      }
+
+      setHasActiveSubscription(true);
+      return { error: null };
+    } catch (err) {
+      console.error('Error activating subscription:', err);
+      return { error: err as Error };
+    }
+  };
+
+  const cancelSubscription = async (): Promise<{ error: Error | null }> => {
+    if (!currentBusiness) {
+      return { error: new Error('No active business selected.') };
+    }
+
+    try {
+      if (isLive) {
+        await supabase
+          .from('subscriptions')
+          .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+          .eq('business_id', currentBusiness.id)
+          .eq('status', 'active');
+      }
+
+      setHasActiveSubscription(false);
+      return { error: null };
+    } catch (err) {
+      console.error('Error cancelling subscription:', err);
+      return { error: err as Error };
+    }
+  };
+
   return (
     <BusinessContext.Provider
       value={{
@@ -466,6 +530,8 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         updateBusiness,
         inviteStaff,
         cancelInvitation,
+        activateSubscription,
+        cancelSubscription,
         refreshBusiness,
       }}
     >
