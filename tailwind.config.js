@@ -62,6 +62,8 @@ export default {
       },
       fontFamily: {
         sans: ['Inter', 'Helvetica Neue', 'Arial', 'sans-serif'],
+        thread: ['Sacramento', 'cursive'],
+        script: ['Sacramento', 'cursive'],
       },
     },
   },

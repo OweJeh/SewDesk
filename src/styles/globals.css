@@ -40,6 +40,12 @@
   .micro-label {
     @apply text-[10px] font-semibold tracking-wider uppercase text-neutral-500;
   }
+
+  /* Thread-like Sacramento typography */
+  .font-thread,
+  .font-script {
+    font-family: 'Sacramento', cursive;
+  }
 }
 
 /* Custom minimal scrollbar */
