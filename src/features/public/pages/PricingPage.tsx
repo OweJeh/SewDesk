@@ -39,11 +39,15 @@ export const PricingPage: React.FC = () => {
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
-                <span>Interactive Tailoring Ruler Picker</span>
+                <span>3 custom measurement templates (+ standard catalogs)</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
-                <span>Unlimited workshop team seats (Tailors, Apprentices)</span>
+                <span>Up to 3 invited staff members (multi-user workshop)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
+                <span>Tactile Interactive Tailoring Ruler Picker</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
@@ -80,11 +84,23 @@ export const PricingPage: React.FC = () => {
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
-                <span>Custom measurement template designer</span>
+                <span>Unlimited custom measurement templates</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                <span>Unlimited invited staff seats (multi-tailor studio)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                <span>Fabric swatch & client photo cloud storage</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
                 <span>Advanced revenue & ledger export to CSV/PDF</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-white shrink-0" />
+                <span>Automated client fitting notices & WhatsApp share</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-white shrink-0" />

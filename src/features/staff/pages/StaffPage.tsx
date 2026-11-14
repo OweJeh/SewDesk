@@ -21,8 +21,15 @@ import {
 } from 'lucide-react';
 
 export const StaffPage: React.FC = () => {
-  const { currentBusiness, currentRole, members, invitations, inviteStaff, cancelInvitation } =
-    useCurrentBusiness();
+  const {
+    currentBusiness,
+    currentRole,
+    members,
+    invitations,
+    hasActiveSubscription,
+    inviteStaff,
+    cancelInvitation,
+  } = useCurrentBusiness();
   const { profile } = useAuth();
 
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
@@ -33,6 +40,8 @@ export const StaffPage: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const canManageStaff = hasPermission(currentRole, 'manage_staff');
+  const invitedStaffCount = members.filter((m) => m.role !== 'owner').length + invitations.length;
+  const isAtStaffLimit = !hasActiveSubscription && invitedStaffCount >= 3;
 
   const handleSendInvite = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,8 +87,8 @@ export const StaffPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold tracking-tight text-black">Workshop Staff & Team</h1>
-            <Badge variant="outline" className="text-[10px]">
-              Unlimited Team Seats
+            <Badge variant={hasActiveSubscription ? "default" : isAtStaffLimit ? "danger" : "outline"} className="text-[10px]">
+              {hasActiveSubscription ? 'Unlimited Team Seats (Pro)' : `${invitedStaffCount} / 3 Free Staff Seats`}
             </Badge>
           </div>
           <p className="text-xs text-[#777777] mt-1">
@@ -99,6 +108,18 @@ export const StaffPage: React.FC = () => {
         )}
       </div>
 
+      {isAtStaffLimit && (
+        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2.5">
+          <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-semibold">Free Tier Staff Limit Reached (3 of 3 seats allocated)</p>
+            <p className="text-[11px] text-amber-700">
+              Your free starter plan includes up to 3 invited staff members. Upgrade to <strong>Pro Tailor Studio</strong> (GH₵ 150/mo) for unlimited team members and multi-user synchronization.
+            </p>
+          </div>
+        </div>
+      )}
+
       {successMsg && (
         <div className="p-3 bg-green-50 border border-green-200 rounded-md text-xs text-green-700 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
@@ -110,7 +131,7 @@ export const StaffPage: React.FC = () => {
       <div className="p-4 bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl text-xs text-neutral-600 flex items-start gap-2.5">
         <Shield className="w-4 h-4 text-black shrink-0 mt-0.5" />
         <div>
-          <strong>Included in your workspace:</strong> Staff accounts are included in the SewDesk subscription model. There are no additional per-seat fees for inviting your apprentices, senior tailors, or accountants.
+          <strong>Staff Seat Policy:</strong> Free workspace accounts include up to 3 invited tailors, assistants, or cutters. Pro Studio accounts enjoy unlimited staff invitations with granular role permissions.
         </div>
       </div>
 

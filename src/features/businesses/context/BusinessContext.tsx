@@ -24,6 +24,7 @@ interface BusinessContextType {
   userBusinesses: Business[];
   members: BusinessMember[];
   invitations: BusinessInvitation[];
+  hasActiveSubscription: boolean;
   isLoading: boolean;
   switchBusiness: (businessId: string) => Promise<void>;
   createBusiness: (data: CreateBusinessInput) => Promise<{ business: Business | null; error: Error | null }>;
@@ -44,6 +45,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [userBusinesses, setUserBusinesses] = useState<Business[]>([]);
   const [members, setMembers] = useState<BusinessMember[]>([]);
   const [invitations, setInvitations] = useState<BusinessInvitation[]>([]);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const isLive = isSupabaseConfigured();
 
@@ -94,6 +96,16 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           if (allInvites) {
             setInvitations(allInvites as BusinessInvitation[]);
           }
+
+          // Check subscription status
+          const { data: subData } = await supabase
+            .from('subscriptions')
+            .select('id, status')
+            .eq('business_id', businessId)
+            .eq('status', 'active')
+            .maybeSingle();
+
+          setHasActiveSubscription(Boolean(subData));
           return;
         }
       }
@@ -333,6 +345,27 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
 
     try {
+      // Free plan limit: up to 3 invited staff members (non-owner members + pending invitations)
+      let activeSub = hasActiveSubscription;
+      if (isLive && !activeSub) {
+        const { data: subData } = await supabase
+          .from('subscriptions')
+          .select('id')
+          .eq('business_id', currentBusiness.id)
+          .eq('status', 'active')
+          .maybeSingle();
+        activeSub = Boolean(subData);
+      }
+
+      const invitedStaffCount = members.filter((m) => m.role !== 'owner').length + invitations.length;
+      if (!activeSub && invitedStaffCount >= 3) {
+        return {
+          error: new Error(
+            'STAFF_LIMIT_EXCEEDED: Free plan includes up to 3 invited staff members. Upgrade to Pro Studio for unlimited team members.'
+          ),
+        };
+      }
+
       const token = generateUUID();
       const newInvite: BusinessInvitation = {
         id: generateUUID(),
@@ -426,6 +459,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         userBusinesses,
         members,
         invitations,
+        hasActiveSubscription,
         isLoading,
         switchBusiness,
         createBusiness,

@@ -2,18 +2,34 @@
   "name": "SewDesk — Digital Workspace for Tailors",
   "short_name": "SewDesk",
   "description": "Your Digital Tailoring Workspace. MEASURE. MANAGE. CREATE.",
-  "start_url": "/app/dashboard",
+  "start_url": "/app",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
+  "background_color": "#000000",
   "theme_color": "#000000",
   "orientation": "portrait-primary",
   "icons": [
     {
-      "src": "/icons/needle-stitch.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/sewdesk-symbol.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
     }
   ]
 }
-

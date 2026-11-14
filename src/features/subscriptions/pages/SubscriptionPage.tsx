@@ -113,15 +113,19 @@ export const SubscriptionPage: React.FC = () => {
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
+                <span>Up to 3 custom templates (+ standard libraries)</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
+                <span>Up to 3 invited staff accounts</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
                 <span>Interactive Body Measurement Ruler</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
                 <span>Workshop order pipeline & production stages</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
-                <span>Multi-user staff access included</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
@@ -162,7 +166,15 @@ export const SubscriptionPage: React.FC = () => {
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
-                <span>All tailoring measurement templates & custom fields</span>
+                <span>Unlimited custom measurement templates</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
+                <span>Unlimited invited staff accounts</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
+                <span>Fabric swatch & client photo cloud storage</span>
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-black shrink-0" />
