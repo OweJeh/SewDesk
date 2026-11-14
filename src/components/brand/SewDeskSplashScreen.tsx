@@ -3,8 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { NeedleAnimation } from './NeedleAnimation';
 import { ThreadAnimation } from './ThreadAnimation';
 import { SewDeskSymbol } from './SewDeskSymbol';
-import { Button } from '@/components/ui/button';
-import { ChevronRight, RotateCcw } from 'lucide-react';
 
 export interface SewDeskSplashScreenProps {
   onComplete?: () => void;
@@ -37,7 +35,6 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
   size = 'compact',
 }) => {
   const [isDismissed, setIsDismissed] = useState(false);
-  const [animationKey, setAnimationKey] = useState(0);
 
   // Detect user's reduced-motion OS preference
   const prefersReducedMotion =
@@ -102,10 +99,6 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
     }
   };
 
-  const handleReplay = () => {
-    setAnimationKey((prev) => prev + 1);
-  };
-
   useEffect(() => {
     if (!autoDismiss) return;
 
@@ -116,48 +109,21 @@ export const SewDeskSplashScreen: React.FC<SewDeskSplashScreenProps> = ({
     }, totalTime);
 
     return () => clearTimeout(timer);
-  }, [autoDismiss, prefersReducedMotion, animationKey]);
+  }, [autoDismiss, prefersReducedMotion]);
 
   return (
     <AnimatePresence>
       {!isDismissed && (
         <motion.div
-          key={`splash-${animationKey}`}
+          key="splash-screen"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, transition: { duration: 0.45, ease: 'easeInOut' } }}
           style={{ backgroundColor: bgColor }}
-          className={`fixed inset-0 min-h-[100dvh] z-50 flex flex-col items-center justify-center p-4 sm:p-6 select-none overflow-hidden ${className}`}
+          className={`fixed inset-0 min-h-[100dvh] z-50 flex flex-col items-center justify-center p-4 sm:p-6 select-none overflow-hidden cursor-pointer ${className}`}
           role="dialog"
           aria-label="SewDesk Application Splash Screen"
+          onClick={handleDismiss}
         >
-          {/* Top Control Bar (Skip / Replay controls) */}
-          <div className="absolute top-4 right-4 sm:top-6 sm:right-6 flex items-center gap-2 z-10">
-            <button
-              onClick={handleReplay}
-              title="Replay Animation"
-              className={`p-2 rounded-full transition-colors text-xs flex items-center gap-1 ${
-                isDark
-                  ? 'text-neutral-400 hover:text-white hover:bg-neutral-900'
-                  : 'text-neutral-500 hover:text-black hover:bg-neutral-100'
-              }`}
-              aria-label="Replay animation"
-            >
-              <RotateCcw className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={handleDismiss}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold tracking-wider uppercase transition-colors flex items-center gap-1 ${
-                isDark
-                  ? 'text-neutral-400 hover:text-white hover:bg-neutral-900'
-                  : 'text-neutral-500 hover:text-black hover:bg-neutral-100'
-              }`}
-              aria-label="Skip splash screen"
-            >
-              <span>Skip</span>
-              <ChevronRight className="w-3 h-3" />
-            </button>
-          </div>
-
           {/* Central Logo & Animation Canvas */}
           <div className={`flex flex-col items-center justify-center ${sizeConfig.containerClass}`}>
             {/* SVG Symbol Animation Canvas (330 x 360 viewBox) */}

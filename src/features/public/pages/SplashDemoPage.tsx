@@ -32,7 +32,7 @@ export const SplashDemoPage: React.FC = () => {
           key={`splash-${playCount}-${theme}-${splashSize}`}
           theme={theme}
           size={splashSize}
-          autoDismiss={false} // Demo mode: lets user observe or manually dismiss
+          autoDismiss={true}
           onComplete={() => setShowFullSplash(false)}
         />
       )}
