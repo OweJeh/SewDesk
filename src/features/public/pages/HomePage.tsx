@@ -23,12 +23,12 @@ export const HomePage: React.FC = () => {
         {/* Tailor's Desk Background */}
         <div className="absolute inset-0 -top-8 -bottom-8 pointer-events-none overflow-hidden select-none rounded-3xl">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-35"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-25"
             style={{
               backgroundImage: 'url(/images/tailor-desk-bg.jpg)',
             }}
           />
-          <div className="absolute inset-0 bg-gradient-to-b from-white/60 via-transparent to-white" />
+          <div className="absolute inset-0 bg-gradient-to-b from-white/75 via-white/50 to-white" />
         </div>
 
         <div className="relative z-10 space-y-8">
@@ -40,7 +40,7 @@ export const HomePage: React.FC = () => {
             MEASURE. MANAGE. CREATE.
           </h1>
 
-          <p className="text-base sm:text-xl text-[#777777] max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-xl text-black font-medium max-w-2xl mx-auto leading-relaxed">
             Replace paper measurement books, scattered order slips, and manual bookkeeping with a luxury digital workspace engineered for master tailors, bespoke clothiers, and fashion studios.
           </p>
 
@@ -57,7 +57,7 @@ export const HomePage: React.FC = () => {
             </Link>
           </div>
 
-          <div className="pt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-[#777777]">
+          <div className="pt-6 flex flex-wrap items-center justify-center gap-6 text-xs text-neutral-800 font-medium">
             <span className="flex items-center gap-1.5">
               <CheckCircle2 className="w-4 h-4 text-black" /> 100 free customer records
             </span>
