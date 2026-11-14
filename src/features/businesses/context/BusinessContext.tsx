@@ -25,6 +25,7 @@ interface BusinessContextType {
   members: BusinessMember[];
   invitations: BusinessInvitation[];
   hasActiveSubscription: boolean;
+  canCreateWorkspace: boolean;
   isLoading: boolean;
   switchBusiness: (businessId: string) => Promise<void>;
   createBusiness: (data: CreateBusinessInput) => Promise<{ business: Business | null; error: Error | null }>;
@@ -249,7 +250,50 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       return { business: null, error: new Error('User must be authenticated') };
     }
 
+    // Policy: Every email is entitled to only one workspace
+    const existingOwned = userBusinesses.find((b) => b.owner_profile_id === user.id);
+    if (existingOwned) {
+      return {
+        business: null,
+        error: new Error(
+          `Every email is entitled to only one workspace. Your account already owns "${existingOwned.business_name}".`
+        ),
+      };
+    }
+
     try {
+      if (isLive) {
+        const { data: liveOwned } = await supabase
+          .from('businesses')
+          .select('id, business_name')
+          .eq('owner_profile_id', user.id)
+          .is('archived_at', null)
+          .maybeSingle();
+
+        if (liveOwned) {
+          return {
+            business: null,
+            error: new Error(
+              `Every email is entitled to only one workspace. Your account already owns "${liveOwned.business_name}".`
+            ),
+          };
+        }
+      } else {
+        const localOwned = await db.businesses
+          .where('owner_profile_id')
+          .equals(user.id)
+          .first();
+
+        if (localOwned) {
+          return {
+            business: null,
+            error: new Error(
+              `Every email is entitled to only one workspace. Your account already owns "${localOwned.business_name}".`
+            ),
+          };
+        }
+      }
+
       const newBusinessId = generateUUID();
       const now = new Date().toISOString();
 
@@ -515,6 +559,8 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const canCreateWorkspace = !userBusinesses.some((b) => b.owner_profile_id === user?.id);
+
   return (
     <BusinessContext.Provider
       value={{
@@ -524,6 +570,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         members,
         invitations,
         hasActiveSubscription,
+        canCreateWorkspace,
         isLoading,
         switchBusiness,
         createBusiness,

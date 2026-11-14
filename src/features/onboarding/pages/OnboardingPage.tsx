@@ -1,16 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/ui/logo';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
-import { Building2, Sparkles, ArrowRight, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { Building2, Sparkles, ArrowRight, CheckCircle2, ShieldCheck, Lock } from 'lucide-react';
 
 export const OnboardingPage: React.FC = () => {
   const { profile } = useAuth();
-  const { createBusiness } = useCurrentBusiness();
+  const { createBusiness, userBusinesses, canCreateWorkspace } = useCurrentBusiness();
   const navigate = useNavigate();
+
+  // If user already owns a workspace, enforce 1 workspace per email and redirect
+  useEffect(() => {
+    if (userBusinesses.length > 0 && !canCreateWorkspace) {
+      navigate('/app/dashboard', { replace: true });
+    }
+  }, [userBusinesses, canCreateWorkspace, navigate]);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [businessName, setBusinessName] = useState('');
@@ -251,9 +258,14 @@ export const OnboardingPage: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-[#E5E5E5] flex items-center justify-between">
-                <div className="text-xs text-neutral-500 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-black" />
-                  <span>You will be designated as Owner</span>
+                <div>
+                  <div className="text-xs text-neutral-600 flex items-center gap-1.5 font-medium">
+                    <ShieldCheck className="w-4 h-4 text-black" />
+                    <span>Designated as Workspace Owner</span>
+                  </div>
+                  <span className="text-[10px] text-neutral-400 mt-0.5 block">
+                    1 business workspace per registered email account
+                  </span>
                 </div>
                 <Button
                   type="submit"

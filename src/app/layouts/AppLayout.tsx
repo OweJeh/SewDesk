@@ -37,7 +37,7 @@ import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 
 export const AppLayout: React.FC = () => {
   const { profile, logout, isPlatformAdmin, setDemoPlatformAdmin } = useAuth();
-  const { currentBusiness, currentRole, userBusinesses, switchBusiness, hasActiveSubscription } = useCurrentBusiness();
+  const { currentBusiness, currentRole, userBusinesses, switchBusiness, hasActiveSubscription, canCreateWorkspace } = useCurrentBusiness();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -132,22 +132,30 @@ export const AppLayout: React.FC = () => {
         {/* Business Selector Pill */}
         <div className="p-3 border-b border-[#E5E5E5] relative">
           <button
-            onClick={() => setIsBusinessDropdownOpen(!isBusinessDropdownOpen)}
-            className="w-full flex items-center justify-between p-2.5 rounded-lg border border-[#E5E5E5] bg-[#FAFAFA] hover:bg-[#F5F5F5] transition-colors text-left"
+            onClick={() => {
+              if (userBusinesses.length > 1) {
+                setIsBusinessDropdownOpen(!isBusinessDropdownOpen);
+              }
+            }}
+            className={`w-full flex items-center justify-between p-2.5 rounded-lg border border-[#E5E5E5] bg-[#FAFAFA] transition-colors text-left ${
+              userBusinesses.length > 1 ? 'hover:bg-[#F5F5F5] cursor-pointer' : 'cursor-default'
+            }`}
           >
             <div className="truncate pr-2">
               <span className="block text-xs font-semibold text-black truncate">
                 {currentBusiness?.business_name || 'My Studio'}
               </span>
               <span className="block text-[10px] text-[#777777] uppercase tracking-wider">
-                {currentRole ? getRoleBadgeLabel(currentRole) : 'Member'}
+                {currentRole ? getRoleBadgeLabel(currentRole) : 'Owner'}
               </span>
             </div>
-            <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+            {userBusinesses.length > 1 && (
+              <ChevronDown className="w-4 h-4 text-neutral-500 shrink-0" />
+            )}
           </button>
 
-          {/* Business Dropdown */}
-          {isBusinessDropdownOpen && (
+          {/* Business Dropdown (only when user has multiple memberships) */}
+          {isBusinessDropdownOpen && userBusinesses.length > 1 && (
             <div className="absolute top-full left-3 right-3 mt-1 bg-white border border-[#E5E5E5] rounded-lg shadow-xl z-50 p-1.5 animate-in fade-in duration-100">
               <div className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 px-2 py-1">
                 Your Workspaces
@@ -173,17 +181,8 @@ export const AppLayout: React.FC = () => {
                   </button>
                 ))}
               </div>
-              <div className="pt-1 mt-1 border-t border-[#E5E5E5]">
-                <button
-                  onClick={() => {
-                    setIsBusinessDropdownOpen(false);
-                    navigate('/onboarding');
-                  }}
-                  className="w-full text-left px-2 py-1.5 text-xs text-neutral-700 hover:bg-neutral-100 rounded flex items-center gap-1.5 font-medium"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>Create New Workspace</span>
-                </button>
+              <div className="pt-1 mt-1 border-t border-[#E5E5E5] px-2 py-1 text-[10px] text-neutral-400 text-center">
+                1 workspace per account
               </div>
             </div>
           )}

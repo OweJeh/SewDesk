@@ -28,6 +28,11 @@ class TestDatabase {
   }
 
   createBusiness(ownerId: string, businessName: string, city: string): { business: Business; member: BusinessMember } {
+    const existing = Array.from(this.businesses.values()).find((b) => b.owner_profile_id === ownerId);
+    if (existing) {
+      throw new Error(`Every email is entitled to only one workspace. Account already owns "${existing.business_name}".`);
+    }
+
     const businessId = 'biz-' + crypto.randomUUID().slice(0, 8);
     const now = new Date().toISOString();
 
@@ -204,6 +209,15 @@ async function runAcceptanceTests() {
   const user2 = testDb.registerUser('Ama Osei', 'ama@oseicouture.com');
   const { business: biz2, member: member2 } = testDb.createBusiness(user2.id, 'Osei Haute Couture', 'Kumasi');
   assert('Test 3: A second business can register independently', biz2.id !== biz1.id && member2.role === 'owner' && member2.profile_id === user2.id);
+
+  // TEST 3B: Enforce Single Workspace per Email Policy
+  let user1DoubleBizBlocked = false;
+  try {
+    testDb.createBusiness(user1.id, 'Illegal Second Studio', 'Takoradi');
+  } catch (err: any) {
+    user1DoubleBizBlocked = err.message.includes('only one workspace');
+  }
+  assert('Test 3B: Every email is entitled to only one workspace', user1DoubleBizBlocked);
 
   // TEST 4: Multi-Tenant Data Isolation (Row Level Security)
   testDb.registerCustomerAtomic(user1.id, biz1.id, 'Chief Addo');
