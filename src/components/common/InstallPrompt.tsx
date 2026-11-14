@@ -102,8 +102,8 @@ export function InstallPrompt() {
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-[#E5E5E5]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-black rounded-xl flex items-center justify-center flex-shrink-0">
-                <img src="/icons/icon-192.png" alt="SewDesk" className="w-8 h-8 rounded-lg" />
+              <div className="w-10 h-10 bg-white border border-[#E5E5E5] rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden">
+                <img src="/icons/icon-192.png" alt="SewDesk" className="w-full h-full object-contain" />
               </div>
               <div>
                 <p className="text-[13px] font-semibold text-[#111]">Add SewDesk to Home Screen</p>
@@ -164,8 +164,8 @@ export function InstallPrompt() {
         <div className="p-4">
           <div className="flex items-start gap-3">
             {/* App icon */}
-            <div className="w-12 h-12 rounded-xl bg-black flex items-center justify-center flex-shrink-0 overflow-hidden">
-              <img src="/icons/icon-192.png" alt="SewDesk" className="w-11 h-11 rounded-xl" />
+            <div className="w-12 h-12 rounded-xl bg-white border border-[#E5E5E5] flex items-center justify-center flex-shrink-0 shadow-sm overflow-hidden">
+              <img src="/icons/icon-192.png" alt="SewDesk" className="w-full h-full object-contain" />
             </div>
 
             {/* Text */}
@@ -209,3 +209,4 @@ export function InstallPrompt() {
     </div>
   );
 }
+
