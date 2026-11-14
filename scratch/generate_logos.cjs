@@ -144,3 +144,4 @@ export const SEWDESK_THREAD_APPROACH_PATH = "${threadApproachPath.replace(/\n\s*
 fs.writeFileSync('src/components/brand/paths.ts', exportJs);
 
 console.log('All SVG assets and paths.ts successfully generated!');
+
