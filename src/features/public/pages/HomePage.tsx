@@ -23,7 +23,7 @@ export const HomePage: React.FC = () => {
         {/* Tailor's Desk Background */}
         <div className="absolute inset-0 -top-8 -bottom-8 pointer-events-none overflow-hidden select-none rounded-3xl">
           <div
-            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+            className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-35"
             style={{
               backgroundImage: 'url(/images/tailor-desk-bg.jpg)',
             }}
