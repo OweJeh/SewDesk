@@ -270,7 +270,6 @@ export const PhotoVaultPage: React.FC = () => {
                       ))}
                     </div>
                     <input
-                      ref={attachInputRef}
                       type="text"
                       placeholder="Caption (optional)"
                       value={caption}
@@ -278,6 +277,7 @@ export const PhotoVaultPage: React.FC = () => {
                       className="w-full border border-[#E5E5E5] rounded-lg px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-black"
                     />
                     <input
+                      ref={attachInputRef}
                       type="file"
                       id="attach-upload"
                       accept="image/*"
@@ -292,7 +292,7 @@ export const PhotoVaultPage: React.FC = () => {
                           setShowUpgradeModal(true);
                           return;
                         }
-                        document.getElementById('attach-upload')?.click();
+                        attachInputRef.current?.click();
                       }}
                       disabled={uploadingAttachment}
                       className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-300' : ''}
@@ -390,6 +390,7 @@ export const PhotoVaultPage: React.FC = () => {
                       ))}
                     </div>
                     <input
+                      ref={postureInputRef}
                       type="file"
                       id="posture-upload"
                       accept="image/*"
@@ -404,7 +405,7 @@ export const PhotoVaultPage: React.FC = () => {
                           setShowUpgradeModal(true);
                           return;
                         }
-                        document.getElementById('posture-upload')?.click();
+                        postureInputRef.current?.click();
                       }}
                       disabled={uploadingPosture}
                       className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-300' : ''}

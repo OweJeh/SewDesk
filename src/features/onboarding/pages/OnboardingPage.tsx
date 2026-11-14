@@ -5,19 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
-import { Building2, Sparkles, ArrowRight, CheckCircle2, ShieldCheck, Lock } from 'lucide-react';
+import { Building2, Sparkles, ArrowRight, CheckCircle2, ShieldCheck, Lock, Loader2 } from 'lucide-react';
 
 export const OnboardingPage: React.FC = () => {
   const { profile } = useAuth();
-  const { createBusiness, userBusinesses, canCreateWorkspace } = useCurrentBusiness();
+  const { createBusiness, userBusinesses, canCreateWorkspace, isLoading: isBizLoading } = useCurrentBusiness();
   const navigate = useNavigate();
-
-  // If user already owns a workspace, enforce 1 workspace per email and redirect
-  useEffect(() => {
-    if (userBusinesses.length > 0 && !canCreateWorkspace) {
-      navigate('/app/dashboard', { replace: true });
-    }
-  }, [userBusinesses, canCreateWorkspace, navigate]);
 
   const [step, setStep] = useState<1 | 2>(1);
   const [businessName, setBusinessName] = useState('');
@@ -33,6 +26,26 @@ export const OnboardingPage: React.FC = () => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // If user already owns a workspace upon loading Step 1, redirect to dashboard
+  useEffect(() => {
+    if (!isBizLoading && !isLoading && step === 1 && userBusinesses.length > 0 && !canCreateWorkspace) {
+      navigate('/app/dashboard', { replace: true });
+    }
+  }, [isBizLoading, isLoading, step, userBusinesses, canCreateWorkspace, navigate]);
+
+  if (isBizLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#F5F5F5] text-black">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-black" />
+          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-500">
+            Checking Workspace Status...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

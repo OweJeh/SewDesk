@@ -62,6 +62,7 @@
 @media print {
   aside,
   header,
+  footer,
   nav,
   .print\:hidden,
   button:not(.print\:show) {

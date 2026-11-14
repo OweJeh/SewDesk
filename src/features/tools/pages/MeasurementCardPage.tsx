@@ -65,7 +65,9 @@ export const MeasurementCardPage: React.FC = () => {
   useEffect(() => {
     if (dataParam) {
       try {
-        const decoded = JSON.parse(decodeURIComponent(escape(atob(dataParam))));
+        // Sanitize spaces that may have replaced '+' in URL search params
+        const normalized = dataParam.replace(/ /g, '+');
+        const decoded = JSON.parse(decodeURIComponent(escape(atob(normalized))));
         setSharedData(decoded);
       } catch (e) {
         console.error('Failed to parse shared measurement card', e);
@@ -147,7 +149,7 @@ export const MeasurementCardPage: React.FC = () => {
     };
     try {
       const base64 = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
-      return `${window.location.origin}/share/measurements?data=${base64}&view=client`;
+      return `${window.location.origin}/share/measurements?data=${encodeURIComponent(base64)}&view=client`;
     } catch {
       return window.location.href;
     }

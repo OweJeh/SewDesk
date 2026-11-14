@@ -36,7 +36,7 @@ export const PublicLayout: React.FC = () => {
 
       {/* Top Banner (Vanishes after 1 min) */}
       {showBanner && (
-        <div className="bg-[#111111] text-white py-2 px-4 text-center text-xs font-medium flex items-center justify-center gap-2 transition-all duration-500">
+        <div className="bg-[#111111] text-white py-2 px-4 text-center text-xs font-medium flex items-center justify-center gap-2 transition-all duration-500 print:hidden">
           <span>First 100 registered customers are 100% free for all tailoring studios.</span>
           <Link to="/register" className="underline font-semibold ml-1 hover:text-neutral-300">
             Claim workspace &rarr;

@@ -24,8 +24,9 @@ export function InstallPrompt() {
       setIsInstalled(true);
       return;
     }
-    // User permanently dismissed
+    // User permanently dismissed or dismissed for this session
     if (localStorage.getItem(INSTALL_DISMISSED_KEY)) return;
+    if (sessionStorage.getItem(SESSION_KEY)) return;
 
     // Detect iOS Safari (needs manual "Add to Home Screen")
     const ios =
