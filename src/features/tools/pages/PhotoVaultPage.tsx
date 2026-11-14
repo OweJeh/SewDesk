@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 import { db } from '@/offline/database/dexie-db';
 import { generateUUID } from '@/lib/utils';
 import type { OrderAttachment, CustomerPosturePhoto } from '@/types';
@@ -46,6 +47,7 @@ export const PhotoVaultPage: React.FC = () => {
   const postureInputRef = useRef<HTMLInputElement>(null);
 
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Load orders
   useEffect(() => {
@@ -285,11 +287,22 @@ export const PhotoVaultPage: React.FC = () => {
                     />
                     <Button
                       size="sm"
-                      onClick={() => document.getElementById('attach-upload')?.click()}
+                      onClick={() => {
+                        if (!hasActiveSubscription) {
+                          setShowUpgradeModal(true);
+                          return;
+                        }
+                        document.getElementById('attach-upload')?.click();
+                      }}
                       disabled={uploadingAttachment}
+                      className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-300' : ''}
                     >
                       <Upload className="w-4 h-4 mr-1.5" />
-                      {uploadingAttachment ? 'Saving...' : `Add ${ATTACH_LABELS[uploadType]}`}
+                      {uploadingAttachment
+                        ? 'Saving...'
+                        : !hasActiveSubscription
+                        ? `Add ${ATTACH_LABELS[uploadType]} (PRO)`
+                        : `Add ${ATTACH_LABELS[uploadType]}`}
                     </Button>
                   </div>
 
@@ -386,11 +399,22 @@ export const PhotoVaultPage: React.FC = () => {
                     />
                     <Button
                       size="sm"
-                      onClick={() => document.getElementById('posture-upload')?.click()}
+                      onClick={() => {
+                        if (!hasActiveSubscription) {
+                          setShowUpgradeModal(true);
+                          return;
+                        }
+                        document.getElementById('posture-upload')?.click();
+                      }}
                       disabled={uploadingPosture}
+                      className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-300' : ''}
                     >
                       <Camera className="w-4 h-4 mr-1.5" />
-                      {uploadingPosture ? 'Saving...' : `Capture ${ANGLE_LABELS[uploadAngle]}`}
+                      {uploadingPosture
+                        ? 'Saving...'
+                        : !hasActiveSubscription
+                        ? `Capture ${ANGLE_LABELS[uploadAngle]} (PRO)`
+                        : `Capture ${ANGLE_LABELS[uploadAngle]}`}
                     </Button>
                     <p className="text-[11px] text-neutral-500 leading-relaxed">
                       Posture photos help ensure accurate shoulder pitch, armhole depth, and silhouette adjustments — especially useful for apprentice tailors referencing the master's notes.
@@ -457,6 +481,14 @@ export const PhotoVaultPage: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Pro Feature Upgrade Popup */}
+      <ProUpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Fabric & Posture Photo Vault"
+        featureDescription="Upgrade to Pro Studio to snap and store unlimited fabric swatches and posture asymmetry photos. All your historical photos remain preserved."
+      />
     </div>
   );
 };

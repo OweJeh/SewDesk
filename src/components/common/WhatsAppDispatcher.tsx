@@ -4,9 +4,11 @@
 // ==============================================================================
 
 import React, { useState } from 'react';
-import { MessageSquare, Copy, CheckCircle2, ChevronDown } from 'lucide-react';
+import { MessageSquare, Copy, CheckCircle2, ChevronDown, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { copyToClipboard } from '@/lib/utils';
+import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 
 interface WhatsAppDispatcherProps {
   customerName: string;
@@ -34,8 +36,10 @@ export const WhatsAppDispatcher: React.FC<WhatsAppDispatcherProps> = ({
   balance = 0,
   currency = 'GHS',
 }) => {
+  const { hasActiveSubscription } = useCurrentBusiness();
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState<'fitting' | 'pickup' | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const wa = whatsapp || phone;
   if (!wa) return null;
@@ -60,37 +64,65 @@ export const WhatsAppDispatcher: React.FC<WhatsAppDispatcherProps> = ({
     setTimeout(() => setCopied(null), 2500);
   };
 
+  const handle1ClickSend = (e: React.MouseEvent, url: string) => {
+    if (!hasActiveSubscription) {
+      e.preventDefault();
+      setShowUpgradeModal(true);
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="relative">
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-center gap-1.5 py-1.5 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 font-semibold rounded-lg text-xs transition-colors"
+        className={`w-full flex items-center justify-center gap-1.5 py-1.5 font-semibold rounded-lg text-xs transition-all ${
+          !hasActiveSubscription
+            ? 'bg-[#25D366]/10 text-[#128C7E] opacity-75 hover:opacity-100'
+            : 'bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20'
+        }`}
       >
         <MessageSquare className="w-3.5 h-3.5" />
-        WhatsApp
+        <span>WhatsApp</span>
+        {!hasActiveSubscription && (
+          <span className="text-[8px] font-bold uppercase tracking-wider bg-black text-white px-1 py-0.2 rounded">
+            PRO
+          </span>
+        )}
         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E5E5E5] rounded-xl shadow-xl z-50 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E5E5E5] rounded-xl shadow-xl z-50 overflow-hidden min-w-[280px]">
           {/* Fitting Reminder */}
           <div className="p-3 border-b border-[#E5E5E5]">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Fitting Reminder</div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                Fitting Reminder
+              </span>
+              {!hasActiveSubscription && (
+                <span className="text-[9px] font-bold bg-black text-white px-1 rounded">PRO 1-CLICK</span>
+              )}
+            </div>
             <p className="text-[11px] text-neutral-600 leading-relaxed bg-[#F5F5F5] rounded-lg p-2 mb-2 whitespace-pre-line">
               {fittingMsg}
             </p>
             <div className="flex gap-1.5">
-              <a
-                href={buildWaUrl(wa, fittingMsg)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#25D366] text-white rounded-lg text-[11px] font-bold hover:bg-[#1ebe5d] transition-colors"
+              <button
+                onClick={(e) => handle1ClickSend(e, buildWaUrl(wa, fittingMsg))}
+                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  !hasActiveSubscription
+                    ? 'bg-neutral-800 text-white opacity-70 hover:opacity-100'
+                    : 'bg-[#25D366] text-white hover:bg-[#1ebe5d]'
+                }`}
               >
                 <MessageSquare className="w-3 h-3" />
-                Send on WhatsApp
-              </a>
+                {!hasActiveSubscription ? '1-Click Dispatch' : 'Send on WhatsApp'}
+              </button>
               <button
                 onClick={() => handleCopy(fittingMsg, 'fitting')}
+                title="Copy message text"
                 className="flex items-center justify-center gap-1 px-2.5 py-1.5 border border-[#E5E5E5] rounded-lg text-[11px] hover:bg-[#F5F5F5] transition-colors"
               >
                 {copied === 'fitting' ? (
@@ -104,22 +136,32 @@ export const WhatsAppDispatcher: React.FC<WhatsAppDispatcherProps> = ({
 
           {/* Ready for Pickup */}
           <div className="p-3">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-500 mb-2">Ready for Pickup</div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+                Ready for Pickup
+              </span>
+              {!hasActiveSubscription && (
+                <span className="text-[9px] font-bold bg-black text-white px-1 rounded">PRO 1-CLICK</span>
+              )}
+            </div>
             <p className="text-[11px] text-neutral-600 leading-relaxed bg-[#F5F5F5] rounded-lg p-2 mb-2 whitespace-pre-line">
               {pickupMsg}
             </p>
             <div className="flex gap-1.5">
-              <a
-                href={buildWaUrl(wa, pickupMsg)}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 flex items-center justify-center gap-1 py-1.5 bg-[#25D366] text-white rounded-lg text-[11px] font-bold hover:bg-[#1ebe5d] transition-colors"
+              <button
+                onClick={(e) => handle1ClickSend(e, buildWaUrl(wa, pickupMsg))}
+                className={`flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg text-[11px] font-bold transition-all ${
+                  !hasActiveSubscription
+                    ? 'bg-neutral-800 text-white opacity-70 hover:opacity-100'
+                    : 'bg-[#25D366] text-white hover:bg-[#1ebe5d]'
+                }`}
               >
                 <MessageSquare className="w-3 h-3" />
-                Send on WhatsApp
-              </a>
+                {!hasActiveSubscription ? '1-Click Dispatch' : 'Send on WhatsApp'}
+              </button>
               <button
                 onClick={() => handleCopy(pickupMsg, 'pickup')}
+                title="Copy message text"
                 className="flex items-center justify-center gap-1 px-2.5 py-1.5 border border-[#E5E5E5] rounded-lg text-[11px] hover:bg-[#F5F5F5] transition-colors"
               >
                 {copied === 'pickup' ? (
@@ -138,6 +180,14 @@ export const WhatsAppDispatcher: React.FC<WhatsAppDispatcherProps> = ({
           </div>
         </div>
       )}
+
+      {/* Pro Upgrade Modal for 1-Click WhatsApp Dispatch */}
+      <ProUpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="1-Click WhatsApp Dispatcher"
+        featureDescription="Tailors save hours every week. Pro gives you 1-click automatic WhatsApp dispatch for fitting appointments and collection balance reminders."
+      />
     </div>
   );
 };

@@ -22,6 +22,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { QRCodeSVG } from '@/components/common/QRCodeSVG';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 import { db } from '@/offline/database/dexie-db';
 import { formatDate, copyToClipboard } from '@/lib/utils';
 import type { Customer, MeasurementSet, MeasurementValue } from '@/types';
@@ -56,6 +57,7 @@ export const MeasurementCardPage: React.FC = () => {
 
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const bizId = currentBusiness?.id || '';
 
@@ -222,11 +224,22 @@ export const MeasurementCardPage: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={handleCopyLink}
-              className={copiedLink ? 'border-emerald-600 text-emerald-700 bg-emerald-50 font-bold' : ''}
+              onClick={() => {
+                if (!hasActiveSubscription) {
+                  setShowUpgradeModal(true);
+                  return;
+                }
+                handleCopyLink();
+              }}
+              className={`${
+                copiedLink ? 'border-emerald-600 text-emerald-700 bg-emerald-50 font-bold' : ''
+              } ${!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-600' : ''}`}
               leftIcon={copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
             >
-              {copiedLink ? 'Link Copied!' : 'Copy Client Link'}
+              <span>{copiedLink ? 'Link Copied!' : 'Copy Client Link'}</span>
+              {!hasActiveSubscription && (
+                <span className="ml-1 text-[9px] font-bold px-1 rounded bg-black text-white">PRO</span>
+              )}
             </Button>
             <Button
               variant="outline"
@@ -239,11 +252,22 @@ export const MeasurementCardPage: React.FC = () => {
             </Button>
             <Button
               size="sm"
-              onClick={handleWhatsAppShare}
-              className="bg-[#25D366] hover:bg-[#1ebe5d] text-white"
+              onClick={() => {
+                if (!hasActiveSubscription) {
+                  setShowUpgradeModal(true);
+                  return;
+                }
+                handleWhatsAppShare();
+              }}
+              className={`bg-[#25D366] hover:bg-[#1ebe5d] text-white ${
+                !hasActiveSubscription ? 'opacity-70 hover:opacity-100' : ''
+              }`}
               leftIcon={<MessageSquare className="w-4 h-4" />}
             >
-              Share via WhatsApp
+              <span>Share via WhatsApp</span>
+              {!hasActiveSubscription && (
+                <span className="ml-1 text-[9px] font-bold px-1 rounded bg-black text-white">PRO</span>
+              )}
             </Button>
           </div>
         </div>
@@ -429,6 +453,14 @@ export const MeasurementCardPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Pro Feature Upgrade Popup */}
+      <ProUpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Digital Measurement Card"
+        featureDescription="Upgrade to Pro Studio to share verified digital measurement cards and links with traveling clients and overseas fabric buyers."
+      />
     </div>
   );
 };

@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
 import { Input } from '@/components/ui/input';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 import { db } from '@/offline/database/dexie-db';
 import { formatCurrency, formatDate, generateUUID } from '@/lib/utils';
 import type { TailorCommission } from '@/types';
@@ -47,6 +48,7 @@ export const CommissionsPage: React.FC = () => {
   const [newOrderNumber, setNewOrderNumber] = useState('');
   const [newGarmentType, setNewGarmentType] = useState('Trousers');
   const [newAmount, setNewAmount] = useState(40);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Load piece rates from storage
   useEffect(() => {
@@ -176,17 +178,37 @@ export const CommissionsPage: React.FC = () => {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setIsRatesModalOpen(true)}
+            onClick={() => {
+              if (!hasActiveSubscription) {
+                setShowUpgradeModal(true);
+                return;
+              }
+              setIsRatesModalOpen(true);
+            }}
             leftIcon={<Settings className="w-4 h-4" />}
+            className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-600' : ''}
           >
-            Piece Rates
+            <span>Piece Rates</span>
+            {!hasActiveSubscription && (
+              <span className="ml-1 text-[9px] font-bold px-1 rounded bg-black text-white">PRO</span>
+            )}
           </Button>
           <Button
             size="sm"
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={() => {
+              if (!hasActiveSubscription) {
+                setShowUpgradeModal(true);
+                return;
+              }
+              setIsAddModalOpen(true);
+            }}
             leftIcon={<Plus className="w-4 h-4" />}
+            className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-300' : ''}
           >
-            Add Record
+            <span>Add Record</span>
+            {!hasActiveSubscription && (
+              <span className="ml-1 text-[9px] font-bold px-1 rounded bg-white text-black">PRO</span>
+            )}
           </Button>
         </div>
       </div>
@@ -270,10 +292,20 @@ export const CommissionsPage: React.FC = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="text-xs h-7 px-2"
-                      onClick={() => handleBulkMarkPaid(staff)}
+                      className={`text-xs h-7 px-2 ${
+                        !hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-600' : ''
+                      }`}
+                      onClick={() => {
+                        if (!hasActiveSubscription) {
+                          setShowUpgradeModal(true);
+                          return;
+                        }
+                        handleBulkMarkPaid(staff);
+                      }}
                     >
-                      Pay {formatCurrency(pendingSum, currency)}
+                      {!hasActiveSubscription
+                        ? `Pay (PRO)`
+                        : `Pay ${formatCurrency(pendingSum, currency)}`}
                     </Button>
                   ) : (
                     <span className="text-[10px] text-emerald-600 font-semibold bg-emerald-50 px-2 py-0.5 rounded">
@@ -504,6 +536,14 @@ export const CommissionsPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Pro Feature Upgrade Popup */}
+      <ProUpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Tailor Piece-Rate Commission Payroll"
+        featureDescription="Upgrade to Pro Studio to track custom piece rates per garment, calculate weekly staff earnings, and settle tailor commissions."
+      />
     </div>
   );
 };

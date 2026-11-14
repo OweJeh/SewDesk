@@ -16,6 +16,8 @@ import {
   Shirt,
 } from 'lucide-react';
 import { copyToClipboard } from '@/lib/utils';
+import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 
 interface GarmentPreset {
   id: string;
@@ -113,6 +115,7 @@ const PRESETS: GarmentPreset[] = [
 
 export const YardageEstimatorPage: React.FC = () => {
   const navigate = useNavigate();
+  const { hasActiveSubscription } = useCurrentBusiness();
 
   const [selectedPresetId, setSelectedPresetId] = useState<string>('3_piece_kaftan');
   const [fabricWidth, setFabricWidth] = useState<'45' | '60'>('45');
@@ -120,6 +123,7 @@ export const YardageEstimatorPage: React.FC = () => {
   const [clientBuild, setClientBuild] = useState<'slim' | 'medium' | 'full'>('medium');
   const [patternType, setPatternType] = useState<'plain' | 'directional' | 'large_plaid'>('plain');
   const [copied, setCopied] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const currentPreset = PRESETS.find((p) => p.id === selectedPresetId) || PRESETS[0];
 
@@ -157,8 +161,8 @@ export const YardageEstimatorPage: React.FC = () => {
             <h1 className="text-xl font-bold tracking-tight text-black">
               Fabric Yardage & Cut Estimator
             </h1>
-            <Badge variant="default" className="text-[10px]">
-              Atelier Tool
+            <Badge variant={hasActiveSubscription ? 'default' : 'outline'} className="text-[10px]">
+              {hasActiveSubscription ? 'Pro Active' : 'Free Preview'}
             </Badge>
           </div>
           <p className="text-xs text-[#777777] mt-1">
@@ -355,11 +359,19 @@ export const YardageEstimatorPage: React.FC = () => {
             <div className="pt-4 border-t border-neutral-800 space-y-2">
               <Button
                 variant="outline"
-                className="w-full bg-white text-black hover:bg-neutral-100"
-                onClick={handleCopy}
+                className={`w-full bg-white text-black hover:bg-neutral-100 ${
+                  !hasActiveSubscription ? 'opacity-70 hover:opacity-100' : ''
+                }`}
+                onClick={() => {
+                  if (!hasActiveSubscription) {
+                    setShowUpgradeModal(true);
+                    return;
+                  }
+                  handleCopy();
+                }}
                 leftIcon={copied ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
               >
-                {copied ? 'Copied to Clipboard!' : 'Copy Cut Specification'}
+                <span>{copied ? 'Copied to Clipboard!' : !hasActiveSubscription ? 'Copy Cut Specification (PRO)' : 'Copy Cut Specification'}</span>
               </Button>
             </div>
           </div>
@@ -376,6 +388,14 @@ export const YardageEstimatorPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Pro Feature Upgrade Popup */}
+      <ProUpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Fabric Yardage & Cut Estimator"
+        featureDescription="Upgrade to Pro Studio to calculate and copy fabric yardage, grainline matching, and cutting requirements directly to client tickets."
+      />
     </div>
   );
 };

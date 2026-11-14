@@ -35,6 +35,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { WhatsAppDispatcher } from '@/components/common/WhatsAppDispatcher';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 import { db } from '@/offline/database/dexie-db';
 import type { OrderStatus, PaymentMethod, MeasurementUnit, OrderAttachment } from '@/types';
 
@@ -50,13 +51,14 @@ const PIPELINE_STAGES: { status: OrderStatus; label: string; step: number }[] = 
 export const OrderDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentBusiness } = useCurrentBusiness();
+  const { currentBusiness, hasActiveSubscription } = useCurrentBusiness();
   const { user } = useAuth();
   const currency = currentBusiness?.default_currency || 'GHS';
 
   const [order, setOrder] = useState<OrderWithDetails | null>(null);
   const [loading, setLoading] = useState(true);
   const [displayUnit, setDisplayUnit] = useState<MeasurementUnit>('cm');
+  const [proFeatureModal, setProFeatureModal] = useState<{ name: string; desc: string } | null>(null);
 
   // Status transition modal
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
@@ -286,13 +288,28 @@ export const OrderDetailPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <Link to={`/app/garment-tag?orderId=${order.id}`}>
+          <Link
+            to={`/app/garment-tag?orderId=${order.id}`}
+            onClick={(e) => {
+              if (!hasActiveSubscription) {
+                e.preventDefault();
+                setProFeatureModal({
+                  name: 'Atelier Garment Bag Tag & QR Code',
+                  desc: 'Generate printable garment slips and hanger tags with QR codes linked directly to customer measurements.',
+                });
+              }
+            }}
+          >
             <Button
               variant="outline"
               size="sm"
               leftIcon={<Tag className="w-4 h-4" />}
+              className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-600' : ''}
             >
-              Bag Tag & QR
+              <span>Bag Tag & QR</span>
+              {!hasActiveSubscription && (
+                <span className="ml-1 text-[9px] font-bold px-1 rounded bg-black text-white">PRO</span>
+              )}
             </Button>
           </Link>
           <Button
@@ -661,12 +678,23 @@ export const OrderDetailPage: React.FC = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  className="h-6 text-[10px] px-2"
-                  onClick={() => document.getElementById('order-photo-file-input')?.click()}
+                  className={`h-6 text-[10px] px-2 ${
+                    !hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-600' : ''
+                  }`}
+                  onClick={() => {
+                    if (!hasActiveSubscription) {
+                      setProFeatureModal({
+                        name: 'Fabric Swatch & Inspiration Vault',
+                        desc: 'Snap fabric swatches and style inspiration photos to prevent roll mix-ups. Historical photos remain 100% intact.',
+                      });
+                      return;
+                    }
+                    document.getElementById('order-photo-file-input')?.click();
+                  }}
                   disabled={uploadingAttachment}
                 >
                   <Plus className="w-3 h-3 mr-0.5" />
-                  {uploadingAttachment ? '...' : 'Snap'}
+                  {uploadingAttachment ? '...' : !hasActiveSubscription ? 'Snap (PRO)' : 'Snap'}
                 </Button>
               </div>
             </div>
@@ -836,6 +864,14 @@ export const OrderDetailPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Pro Feature Upgrade Popup */}
+      <ProUpgradeModal
+        isOpen={Boolean(proFeatureModal)}
+        onClose={() => setProFeatureModal(null)}
+        featureName={proFeatureModal?.name}
+        featureDescription={proFeatureModal?.desc}
+      />
     </div>
   );
 };

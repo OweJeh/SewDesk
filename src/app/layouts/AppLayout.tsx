@@ -33,10 +33,11 @@ import {
   Share2,
 } from 'lucide-react';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 
 export const AppLayout: React.FC = () => {
   const { profile, logout, isPlatformAdmin, setDemoPlatformAdmin } = useAuth();
-  const { currentBusiness, currentRole, userBusinesses, switchBusiness } = useCurrentBusiness();
+  const { currentBusiness, currentRole, userBusinesses, switchBusiness, hasActiveSubscription } = useCurrentBusiness();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -44,6 +45,7 @@ export const AppLayout: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBusinessDropdownOpen, setIsBusinessDropdownOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  const [proModalFeature, setProModalFeature] = useState<{ name: string; path: string; desc?: string } | null>(null);
 
   React.useEffect(() => {
     const handleOnline = () => setIsOnline(true);
@@ -69,11 +71,41 @@ export const AppLayout: React.FC = () => {
   ];
 
   const toolItems = [
-    { label: 'Fabric Estimator', path: '/app/calculator', icon: Calculator },
-    { label: 'Photo Vault', path: '/app/photos', icon: Camera },
-    { label: 'Garment Bag Tags', path: '/app/garment-tag', icon: Tag },
-    { label: 'Commission Payroll', path: '/app/commissions', icon: DollarSign },
-    { label: 'Measurement Cards', path: '/app/measurement-card', icon: Share2 },
+    {
+      label: 'Fabric Estimator',
+      path: '/app/calculator',
+      icon: Calculator,
+      pro: true,
+      desc: 'Calculate exact fabric yardage needed from garment style, client height, and fabric width.',
+    },
+    {
+      label: 'Photo Vault',
+      path: '/app/photos',
+      icon: Camera,
+      pro: true,
+      desc: 'Capture fabric swatches and client posture photos to cut armholes and shoulders with precision.',
+    },
+    {
+      label: 'Garment Bag Tags',
+      path: '/app/garment-tag',
+      icon: Tag,
+      pro: true,
+      desc: 'Print atelier hanger slips with QR codes linked directly to customer measurements.',
+    },
+    {
+      label: 'Commission Payroll',
+      path: '/app/commissions',
+      icon: DollarSign,
+      pro: true,
+      desc: 'Track piece-rate workshop earnings and payouts for cutters and tailors per completed outfit.',
+    },
+    {
+      label: 'Measurement Cards',
+      path: '/app/measurement-card',
+      icon: Share2,
+      pro: true,
+      desc: 'Share branded digital measurement cards with traveling clients to purchase fabric abroad.',
+    },
   ];
 
   const handleLogout = async () => {
@@ -184,18 +216,43 @@ export const AppLayout: React.FC = () => {
           {toolItems.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname.startsWith(item.path);
+            const isDimmed = !hasActiveSubscription && item.pro;
+
             return (
               <Link
                 key={item.path}
                 to={item.path}
+                onClick={(e) => {
+                  if (isDimmed) {
+                    e.preventDefault();
+                    setProModalFeature({ name: item.label, path: item.path, desc: item.desc });
+                  }
+                }}
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium transition-colors ${
                   isActive
                     ? 'bg-black text-white shadow-sm'
+                    : isDimmed
+                    ? 'text-neutral-500 opacity-60 hover:opacity-100 hover:bg-[#F5F5F5] hover:text-black'
                     : 'text-neutral-700 hover:bg-[#F5F5F5] hover:text-black'
                 }`}
               >
-                <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-neutral-500'}`} />
-                <span>{item.label}</span>
+                <Icon
+                  className={`w-4 h-4 shrink-0 ${
+                    isActive ? 'text-white' : isDimmed ? 'text-neutral-400' : 'text-neutral-500'
+                  }`}
+                />
+                <span className="truncate">{item.label}</span>
+                {item.pro && (
+                  <span
+                    className={`ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded shrink-0 ${
+                      hasActiveSubscription
+                        ? 'bg-neutral-100 text-neutral-700'
+                        : 'bg-black text-white'
+                    }`}
+                  >
+                    PRO
+                  </span>
+                )}
               </Link>
             );
           })}
@@ -411,17 +468,40 @@ export const AppLayout: React.FC = () => {
             {toolItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.path);
+              const isDimmed = !hasActiveSubscription && item.pro;
+
               return (
                 <Link
                   key={item.path}
                   to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    if (isDimmed) {
+                      e.preventDefault();
+                      setProModalFeature({ name: item.label, path: item.path, desc: item.desc });
+                    }
+                  }}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium ${
-                    isActive ? 'bg-black text-white' : 'text-neutral-700 hover:bg-neutral-100'
+                    isActive
+                      ? 'bg-black text-white'
+                      : isDimmed
+                      ? 'text-neutral-500 opacity-60 hover:opacity-100 hover:bg-neutral-100'
+                      : 'text-neutral-700 hover:bg-neutral-100'
                   }`}
                 >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
+                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                  {item.pro && (
+                    <span
+                      className={`ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded shrink-0 ${
+                        hasActiveSubscription
+                          ? 'bg-neutral-100 text-neutral-700'
+                          : 'bg-black text-white'
+                      }`}
+                    >
+                      PRO
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -480,6 +560,22 @@ export const AppLayout: React.FC = () => {
           </button>
         </nav>
       </div>
+
+      {/* Pro Feature Upgrade Popup */}
+      <ProUpgradeModal
+        isOpen={Boolean(proModalFeature)}
+        onClose={() => setProModalFeature(null)}
+        featureName={proModalFeature?.name}
+        featureDescription={proModalFeature?.desc}
+        onContinueAnyway={
+          proModalFeature
+            ? () => {
+                navigate(proModalFeature.path);
+                setProModalFeature(null);
+              }
+            : undefined
+        }
+      />
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { orderService, type OrderWithDetails } from '@/features/orders/services/
 import { MeasurementComparisonModal } from '@/features/measurements/components/MeasurementComparisonModal';
 import type { Customer, MeasurementSet, MeasurementUnit, CustomerPosturePhoto } from '@/types';
 import { WhatsAppDispatcher } from '@/components/common/WhatsAppDispatcher';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 import { db } from '@/offline/database/dexie-db';
 import { generateUUID } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,7 @@ import {
 
 export const CustomerDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const { currentBusiness } = useCurrentBusiness();
+  const { currentBusiness, hasActiveSubscription } = useCurrentBusiness();
   const { user, profile } = useAuth();
   const navigate = useNavigate();
 
@@ -55,6 +56,7 @@ export const CustomerDetailPage: React.FC = () => {
   const [customerOrders, setCustomerOrders] = useState<OrderWithDetails[]>([]);
   const [newNoteText, setNewNoteText] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [proFeatureModal, setProFeatureModal] = useState<{ name: string; desc: string } | null>(null);
 
   // Posture photos
   const [posturePhotos, setPosturePhotos] = useState<CustomerPosturePhoto[]>([]);
@@ -232,9 +234,28 @@ export const CustomerDetailPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Link to={`/app/measurement-card?customerId=${customer.id}`}>
-              <Button size="sm" variant="outline" leftIcon={<Share2 className="w-3.5 h-3.5" />}>
-                Measurement Card
+            <Link
+              to={`/app/measurement-card?customerId=${customer.id}`}
+              onClick={(e) => {
+                if (!hasActiveSubscription) {
+                  e.preventDefault();
+                  setProFeatureModal({
+                    name: 'Digital Measurement Card',
+                    desc: 'Generate a branded, mobile-friendly digital card with this client’s measurements for travel or fabric purchases.',
+                  });
+                }
+              }}
+            >
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<Share2 className="w-3.5 h-3.5" />}
+                className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-600' : ''}
+              >
+                <span>Measurement Card</span>
+                {!hasActiveSubscription && (
+                  <span className="ml-1 text-[9px] font-bold px-1 rounded bg-black text-white">PRO</span>
+                )}
               </Button>
             </Link>
             <Link to={`/app/measurements/new?customerId=${customer.id}`}>
@@ -571,11 +592,25 @@ export const CustomerDetailPage: React.FC = () => {
               />
               <Button
                 size="sm"
-                onClick={() => document.getElementById('customer-posture-file-upload')?.click()}
+                onClick={() => {
+                  if (!hasActiveSubscription) {
+                    setProFeatureModal({
+                      name: 'Client Posture & Shoulder Slope Vault',
+                      desc: 'Capture posture photos to cut armholes and shoulders with precision. Historical photos remain 100% intact.',
+                    });
+                    return;
+                  }
+                  document.getElementById('customer-posture-file-upload')?.click();
+                }}
                 disabled={uploadingPosture}
                 leftIcon={<Camera className="w-3.5 h-3.5" />}
+                className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-600' : ''}
               >
-                {uploadingPosture ? 'Saving...' : 'Snap View'}
+                {uploadingPosture
+                  ? 'Saving...'
+                  : !hasActiveSubscription
+                  ? 'Snap View (PRO)'
+                  : 'Snap View'}
               </Button>
             </div>
           </div>
@@ -792,6 +827,14 @@ export const CustomerDetailPage: React.FC = () => {
           defaultUnit={currentBusiness?.default_measurement_unit || 'cm'}
         />
       )}
+
+      {/* Pro Feature Upgrade Popup */}
+      <ProUpgradeModal
+        isOpen={Boolean(proFeatureModal)}
+        onClose={() => setProFeatureModal(null)}
+        featureName={proFeatureModal?.name}
+        featureDescription={proFeatureModal?.desc}
+      />
     </div>
   );
 };

@@ -11,12 +11,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { QRCodeSVG } from '@/components/common/QRCodeSVG';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
+import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 import { db } from '@/offline/database/dexie-db';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import type { Order, Customer } from '@/types';
 
 export const GarmentTagPage: React.FC = () => {
-  const { currentBusiness } = useCurrentBusiness();
+  const { currentBusiness, hasActiveSubscription } = useCurrentBusiness();
   const [searchParams] = useSearchParams();
   const preselectedOrderId = searchParams.get('orderId') || '';
 
@@ -24,6 +25,7 @@ export const GarmentTagPage: React.FC = () => {
   const [customers, setCustomers] = useState<Record<string, Customer>>({});
   const [selectedOrderId, setSelectedOrderId] = useState<string>(preselectedOrderId);
   const [loading, setLoading] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const currency = currentBusiness?.default_currency || 'GHS';
   const bizId = currentBusiness?.id || '';
@@ -80,11 +82,18 @@ export const GarmentTagPage: React.FC = () => {
         <div className="flex items-center gap-2">
           <Button
             size="sm"
-            onClick={handlePrint}
+            onClick={() => {
+              if (!hasActiveSubscription) {
+                setShowUpgradeModal(true);
+                return;
+              }
+              handlePrint();
+            }}
             disabled={!selectedOrder}
             leftIcon={<Printer className="w-4 h-4" />}
+            className={!hasActiveSubscription ? 'opacity-70 hover:opacity-100 text-neutral-300' : ''}
           >
-            Print Tag
+            <span>{!hasActiveSubscription ? 'Print Tag (PRO)' : 'Print Tag'}</span>
           </Button>
         </div>
       </div>
@@ -234,6 +243,14 @@ export const GarmentTagPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Pro Feature Upgrade Popup */}
+      <ProUpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        featureName="Atelier Garment Bag Tag & QR Code"
+        featureDescription="Upgrade to Pro Studio to generate printable garment bag slips with scannable QR codes for your hangers and fabric bundles."
+      />
     </div>
   );
 };
