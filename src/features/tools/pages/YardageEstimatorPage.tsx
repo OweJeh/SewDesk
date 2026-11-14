@@ -15,6 +15,7 @@ import {
   HelpCircle,
   Shirt,
 } from 'lucide-react';
+import { copyToClipboard } from '@/lib/utils';
 
 interface GarmentPreset {
   id: string;
@@ -140,9 +141,9 @@ export const YardageEstimatorPage: React.FC = () => {
   const finalYards = Math.round(baseEstimate * heightMultiplier * buildMultiplier * patternMultiplier * 10) / 10;
   const finalMeters = Math.round(finalYards * 0.9144 * 10) / 10;
 
-  const handleCopy = () => {
+  const handleCopy = async () => {
     const text = `SewDesk Cut Estimation: ${currentPreset.name} (${fabricWidth}" Fabric Width) requires approx. ${finalYards} Yards (${finalMeters}m). Pattern Matching: ${patternType}. Lining: ${currentPreset.liningYards} yds.`;
-    navigator.clipboard.writeText(text);
+    await copyToClipboard(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 3000);
   };

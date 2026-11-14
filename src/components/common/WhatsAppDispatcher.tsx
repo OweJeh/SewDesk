@@ -6,6 +6,7 @@
 import React, { useState } from 'react';
 import { MessageSquare, Copy, CheckCircle2, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { copyToClipboard } from '@/lib/utils';
 
 interface WhatsAppDispatcherProps {
   customerName: string;
@@ -54,13 +55,9 @@ export const WhatsAppDispatcher: React.FC<WhatsAppDispatcherProps> = ({
   }Visit us at ${studio} during business hours to pick up your outfit.\n\nThank you for choosing SewDesk – ${studio}`;
 
   const handleCopy = async (msg: string, type: 'fitting' | 'pickup') => {
-    try {
-      await navigator.clipboard.writeText(msg);
-      setCopied(type);
-      setTimeout(() => setCopied(null), 2500);
-    } catch {
-      /* ignore */
-    }
+    await copyToClipboard(msg);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2500);
   };
 
   return (

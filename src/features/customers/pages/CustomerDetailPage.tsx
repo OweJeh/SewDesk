@@ -344,8 +344,14 @@ export const CustomerDetailPage: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                   <div>
-                    <span className="font-bold text-black text-sm">{latestSet.session_name}</span>
-                    <span className="text-neutral-400 ml-2">({latestSet.garment_type})</span>
+                    <span className="font-bold text-black text-sm capitalize">
+                      {latestSet.garment_type
+                        ? latestSet.session_name.replace(/^Body Fitting/i, latestSet.garment_type)
+                        : latestSet.session_name}
+                    </span>
+                    {latestSet.garment_type && !latestSet.session_name.toLowerCase().includes(latestSet.garment_type.toLowerCase()) && (
+                      <span className="text-neutral-400 ml-2">({latestSet.garment_type})</span>
+                    )}
                   </div>
                   <span className="text-neutral-400 font-mono text-[11px]">
                     Recorded: {formatDate(latestSet.created_at)}
@@ -438,7 +444,11 @@ export const CustomerDetailPage: React.FC = () => {
                       }`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-black">{s.session_name}</span>
+                        <span className="text-xs font-bold text-black capitalize">
+                          {s.garment_type
+                            ? s.session_name.replace(/^Body Fitting/i, s.garment_type)
+                            : s.session_name}
+                        </span>
                         {idx === 0 && (
                           <Badge variant="default" className="text-[9px]">LATEST</Badge>
                         )}
@@ -459,7 +469,11 @@ export const CustomerDetailPage: React.FC = () => {
                   <>
                     <div className="flex items-center justify-between border-b border-[#E5E5E5] pb-3">
                       <div>
-                        <h4 className="text-sm font-bold text-black">{inspectedSet.session_name}</h4>
+                        <h4 className="text-sm font-bold text-black capitalize">
+                          {inspectedSet.garment_type
+                            ? inspectedSet.session_name.replace(/^Body Fitting/i, inspectedSet.garment_type)
+                            : inspectedSet.session_name}
+                        </h4>
                         <span className="text-[11px] text-neutral-400 font-mono">
                           {formatDate(inspectedSet.created_at)} &bull; {inspectedSet.garment_type}
                         </span>

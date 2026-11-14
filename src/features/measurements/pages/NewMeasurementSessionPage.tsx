@@ -37,11 +37,22 @@ export const NewMeasurementSessionPage: React.FC = () => {
   const [unit, setUnit] = useState<MeasurementUnit>(
     currentBusiness?.default_measurement_unit || 'cm'
   );
-  const [garmentType, setGarmentType] = useState('Bespoke Ensemble');
+  const initialGarment = templateIdParam === 'trousers_only' ? 'Trousers' : 'Trousers';
+  const [garmentType, setGarmentType] = useState(initialGarment);
   const [sessionName, setSessionName] = useState(
-    `Body Fitting — ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+    `${initialGarment} — ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
   );
   const [fitNotes, setFitNotes] = useState('');
+
+  const updateGarmentType = (type: string) => {
+    setGarmentType(type);
+    const dateFormatted = new Date().toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    setSessionName(`${type || 'Measurement'} — ${dateFormatted}`);
+  };
 
   // Values map: field_name -> current display value
   const [fieldValues, setFieldValues] = useState<Record<string, number>>({});
@@ -197,7 +208,7 @@ export const NewMeasurementSessionPage: React.FC = () => {
           </button>
           <div>
             <h1 className="text-xl font-bold tracking-tight text-black">
-              New Body Fitting Session
+              New {garmentType ? `${garmentType} Session` : 'Measurement Session'}
             </h1>
             <p className="text-xs text-[#777777] mt-0.5">
               Record precision dimensions using the interactive ruler. Previous sets will never be overwritten.
@@ -282,8 +293,15 @@ export const NewMeasurementSessionPage: React.FC = () => {
           <select
             value={selectedTemplateId}
             onChange={(e) => {
-              setSelectedTemplateId(e.target.value);
+              const tId = e.target.value;
+              setSelectedTemplateId(tId);
               setCurrentFieldIndex(0);
+              let autoGarment = garmentType;
+              if (tId === 'trousers_only') autoGarment = 'Trousers';
+              else if (tId === 'shirt_kaftan_only') autoGarment = 'Shirt & Kaftan';
+              else if (tId === 'male_bespoke' && garmentType === 'Trousers') autoGarment = 'Bespoke Suit';
+              else if (tId === 'female_bespoke') autoGarment = 'Bespoke Dress';
+              updateGarmentType(autoGarment);
             }}
             className="flex h-11 w-full rounded-md border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#111111] focus:border-black focus:outline-none"
           >
@@ -297,11 +315,36 @@ export const NewMeasurementSessionPage: React.FC = () => {
 
         <div>
           <Input
-            label="Garment Type / Purpose"
+            label="Garment Type"
             value={garmentType}
-            onChange={(e) => setGarmentType(e.target.value)}
-            placeholder="e.g. 3-Piece Bespoke Suit"
+            onChange={(e) => updateGarmentType(e.target.value)}
+            placeholder="e.g. Trousers, Kaftan, Suit"
           />
+          <div className="flex flex-wrap gap-1 mt-1.5">
+            {['Trousers', 'Shirt', 'Kaftan', 'Suit', 'Dress', 'Agbada', 'Skirt'].map((preset) => (
+              <button
+                key={preset}
+                type="button"
+                onClick={() => {
+                  updateGarmentType(preset);
+                  if (preset === 'Trousers') {
+                    setSelectedTemplateId('trousers_only');
+                    setCurrentFieldIndex(0);
+                  } else if (preset === 'Shirt' || preset === 'Kaftan') {
+                    setSelectedTemplateId('shirt_kaftan_only');
+                    setCurrentFieldIndex(0);
+                  }
+                }}
+                className={`text-[10px] px-2 py-0.5 rounded border transition-colors ${
+                  garmentType.toLowerCase() === preset.toLowerCase()
+                    ? 'bg-black text-white border-black font-bold'
+                    : 'bg-[#F5F5F5] border-[#E5E5E5] text-neutral-600 hover:border-black'
+                }`}
+              >
+                {preset}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

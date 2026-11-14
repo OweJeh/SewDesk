@@ -56,3 +56,59 @@ export function generateUUID(): string {
   });
 }
 
+/**
+ * Universal clipboard copy function with multi-tier fallback.
+ * Works seamlessly in secure contexts (HTTPS/localhost), non-secure contexts (LAN IPs/HTTP),
+ * iframes, iOS Safari, Android Chrome, and PWAs without throwing unhandled exceptions.
+ */
+export async function copyToClipboard(text: string): Promise<boolean> {
+  if (!text) return false;
+
+  // Tier 1: Modern navigator.clipboard API (if allowed and available)
+  if (
+    typeof navigator !== 'undefined' &&
+    navigator.clipboard &&
+    typeof navigator.clipboard.writeText === 'function' &&
+    window.isSecureContext
+  ) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch (e) {
+      console.warn('navigator.clipboard.writeText blocked or failed, attempting fallback...', e);
+    }
+  }
+
+  // Tier 2: Universal document.execCommand('copy') with hidden textarea
+  try {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.setAttribute('readonly', '');
+    textArea.style.position = 'fixed';
+    textArea.style.top = '-9999px';
+    textArea.style.left = '-9999px';
+    textArea.style.opacity = '0';
+    textArea.style.pointerEvents = 'none';
+    document.body.appendChild(textArea);
+
+    textArea.focus();
+    textArea.select();
+    textArea.setSelectionRange(0, text.length);
+
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    if (successful) return true;
+  } catch (err) {
+    console.warn('execCommand copy fallback failed', err);
+  }
+
+  // Tier 3: Prompt dialog as guaranteed fallback for user to manually copy
+  try {
+    window.prompt('Copy to clipboard: Ctrl+C / Cmd+C, Enter', text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+

@@ -136,10 +136,16 @@ export const MeasurementsPage: React.FC = () => {
                   </div>
                   <div>
                     <h4 className="text-xs font-bold text-black group-hover:underline flex items-center gap-2">
-                      <span>{s.session_name}</span>
-                      <Badge variant="outline" className="text-[9px]">
-                        {s.garment_type}
-                      </Badge>
+                      <span className="capitalize">
+                        {s.garment_type
+                          ? s.session_name.replace(/^Body Fitting/i, s.garment_type)
+                          : s.session_name}
+                      </span>
+                      {s.garment_type && !s.session_name.toLowerCase().includes(s.garment_type.toLowerCase()) && (
+                        <Badge variant="outline" className="text-[9px]">
+                          {s.garment_type}
+                        </Badge>
+                      )}
                     </h4>
                     <p className="text-[11px] text-neutral-500 mt-0.5 flex items-center gap-2">
                       <span className="font-semibold text-black flex items-center gap-1">

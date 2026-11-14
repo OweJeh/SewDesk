@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { QRCodeSVG } from '@/components/common/QRCodeSVG';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
 import { db } from '@/offline/database/dexie-db';
-import { formatDate } from '@/lib/utils';
+import { formatDate, copyToClipboard } from '@/lib/utils';
 import type { Customer, MeasurementSet, MeasurementValue } from '@/types';
 
 interface EncodedCardData {
@@ -154,13 +154,9 @@ export const MeasurementCardPage: React.FC = () => {
   const shareUrl = generateShareUrl();
 
   const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2500);
-    } catch {
-      /* ignore */
-    }
+    await copyToClipboard(shareUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
   };
 
   const generateWhatsAppMessage = () => {
@@ -182,13 +178,9 @@ export const MeasurementCardPage: React.FC = () => {
   };
 
   const handleCopySummary = async () => {
-    try {
-      await navigator.clipboard.writeText(generateWhatsAppMessage());
-      setCopiedText(true);
-      setTimeout(() => setCopiedText(false), 2500);
-    } catch {
-      /* ignore */
-    }
+    await copyToClipboard(generateWhatsAppMessage());
+    setCopiedText(true);
+    setTimeout(() => setCopiedText(false), 2500);
   };
 
   const handleWhatsAppShare = () => {
@@ -231,9 +223,19 @@ export const MeasurementCardPage: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={handleCopyLink}
-              leftIcon={copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              className={copiedLink ? 'border-emerald-600 text-emerald-700 bg-emerald-50 font-bold' : ''}
+              leftIcon={copiedLink ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
             >
               {copiedLink ? 'Link Copied!' : 'Copy Client Link'}
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopySummary}
+              className={copiedText ? 'border-emerald-600 text-emerald-700 bg-emerald-50 font-bold' : ''}
+              leftIcon={copiedText ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+            >
+              {copiedText ? 'Summary Copied!' : 'Copy Dimensions'}
             </Button>
             <Button
               size="sm"
@@ -287,7 +289,9 @@ export const MeasurementCardPage: React.FC = () => {
                   ) : (
                     sets.map((s) => (
                       <option key={s.id} value={s.id}>
-                        {s.session_name || s.garment_type || 'Fitting Session'} — {formatDate(s.created_at)}
+                        {s.garment_type
+                          ? s.session_name.replace(/^Body Fitting/i, s.garment_type)
+                          : s.session_name || 'Fitting Session'} — {formatDate(s.created_at)}
                       </option>
                     ))
                   )}
@@ -302,6 +306,33 @@ export const MeasurementCardPage: React.FC = () => {
       {/* Branded Digital Card Display */}
       <div className="flex justify-center">
         <div className="w-full max-w-xl bg-white border border-[#E5E5E5] rounded-2xl shadow-lg p-6 sm:p-8 space-y-6 print:border-2 print:border-black print:rounded-none print:shadow-none print:w-full print:max-w-full">
+          {/* Client View Action Bar */}
+          {isClientView && (
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5] print:hidden">
+              <span className="text-xs font-bold text-neutral-500">Client Measurement Card</span>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyLink}
+                  className={copiedLink ? 'border-emerald-600 text-emerald-700 bg-emerald-50 text-xs h-7' : 'text-xs h-7'}
+                  leftIcon={copiedLink ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                >
+                  {copiedLink ? 'Copied!' : 'Copy Link'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.print()}
+                  className="text-xs h-7"
+                  leftIcon={<Printer className="w-3.5 h-3.5" />}
+                >
+                  Save PDF
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Studio Header */}
           <div className="flex items-start justify-between border-b border-[#E5E5E5] pb-5">
             <div>
