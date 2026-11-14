@@ -86,12 +86,12 @@ export const AppLayout: React.FC = () => {
   const isAtLimit = slotsUsed >= 100;
 
   return (
-    <div className="min-h-screen bg-[#F5F5F5] flex flex-col md:flex-row text-[#111111]">
+    <div className="min-h-screen bg-[#F5F5F5] flex flex-col md:flex-row text-[#111111] print:bg-white print:min-h-0">
       {/* Auto scroll-to-top on navigation */}
       <ScrollToTop />
 
       {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#E5E5E5] shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto">
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#E5E5E5] shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto print:hidden">
         {/* Brand Header */}
         <div className="p-5 border-b border-[#E5E5E5]">
           <Logo showTagline size="sm" to="/app/dashboard" />
@@ -247,7 +247,7 @@ export const AppLayout: React.FC = () => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Top Header Bar */}
-        <header className="sticky top-0 z-30 bg-white border-b border-[#E5E5E5] h-16 flex items-center justify-between px-4 sm:px-6">
+        <header className="sticky top-0 z-30 bg-white border-b border-[#E5E5E5] h-16 flex items-center justify-between px-4 sm:px-6 print:hidden">
           {/* Left: Mobile Toggle & Workspace Name */}
           <div className="flex items-center gap-3">
             <button
@@ -387,7 +387,7 @@ export const AppLayout: React.FC = () => {
 
         {/* Mobile Navigation Drawer */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-[#E5E5E5] px-4 py-3 space-y-1">
+          <div className="md:hidden bg-white border-b border-[#E5E5E5] px-4 py-3 space-y-1 print:hidden">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname.startsWith(item.path);
@@ -429,12 +429,12 @@ export const AppLayout: React.FC = () => {
         )}
 
         {/* Workspace Content Slot */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-20 md:pb-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto pb-20 md:pb-8 print:p-0 print:m-0 print:max-w-none print:w-full">
           <Outlet />
         </main>
 
         {/* Mobile Bottom Navigation Bar (Thumb Friendly, 48px touch targets) */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E5E5] flex items-center justify-around h-16 px-2 shadow-lg">
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-[#E5E5E5] flex items-center justify-around h-16 px-2 shadow-lg print:hidden">
           <Link
             to="/app/dashboard"
             className={`flex flex-col items-center justify-center min-w-[56px] h-full ${

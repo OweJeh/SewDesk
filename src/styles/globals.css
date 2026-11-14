@@ -58,3 +58,48 @@
   background: #a3a3a3;
 }
 
+/* Print optimization: Print ONLY printable content and cleanly hide navigation, sidebars, headers */
+@media print {
+  aside,
+  header,
+  nav,
+  .print\:hidden,
+  button:not(.print\:show) {
+    display: none !important;
+  }
+
+  body,
+  html,
+  #root,
+  .min-h-screen,
+  main {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .measurement-card,
+  #printable-measurement-card {
+    border: 1.5px solid #000000 !important;
+    border-radius: 12px !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 auto !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  @page {
+    margin: 1.2cm;
+    size: auto;
+  }
+}
+

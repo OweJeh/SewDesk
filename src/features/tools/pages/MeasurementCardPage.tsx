@@ -304,8 +304,11 @@ export const MeasurementCardPage: React.FC = () => {
       )}
 
       {/* Branded Digital Card Display */}
-      <div className="flex justify-center">
-        <div className="w-full max-w-xl bg-white border border-[#E5E5E5] rounded-2xl shadow-lg p-6 sm:p-8 space-y-6 print:border-2 print:border-black print:rounded-none print:shadow-none print:w-full print:max-w-full">
+      <div className="flex justify-center print:block print:w-full">
+        <div
+          id="printable-measurement-card"
+          className="measurement-card w-full max-w-xl bg-white border border-[#E5E5E5] rounded-2xl shadow-lg p-6 sm:p-8 space-y-6 print:border print:border-black print:rounded-xl print:shadow-none print:w-full print:max-w-none print:p-6 print:m-0"
+        >
           {/* Client View Action Bar */}
           {isClientView && (
             <div className="flex items-center justify-between pb-3 border-b border-[#E5E5E5] print:hidden">
