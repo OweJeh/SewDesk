@@ -1,21 +1,95 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCurrentBusiness } from '@/features/businesses/context/BusinessContext';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Building2, User, Globe, Shield, Save, CheckCircle2 } from 'lucide-react';
+import { Building2, User, Save, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const SettingsPage: React.FC = () => {
-  const { currentBusiness, currentRole } = useCurrentBusiness();
-  const { profile } = useAuth();
+  const { currentBusiness, currentRole, updateBusiness } = useCurrentBusiness();
+  const { profile, updateProfile } = useAuth();
 
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSave = (e: React.FormEvent) => {
+  // Form states initialized from profile and currentBusiness
+  const [fullName, setFullName] = useState(profile?.full_name || '');
+  const [hasUserEditedName, setHasUserEditedName] = useState(false);
+
+  const [businessName, setBusinessName] = useState(currentBusiness?.business_name || '');
+  const [businessType, setBusinessType] = useState(currentBusiness?.business_type || '');
+  const [contactEmail, setContactEmail] = useState(currentBusiness?.contact_email || '');
+  const [phone, setPhone] = useState(currentBusiness?.phone || '');
+  const [city, setCity] = useState(currentBusiness?.city || '');
+  const [measurementUnit, setMeasurementUnit] = useState<'cm' | 'inch'>(
+    currentBusiness?.default_measurement_unit || 'cm'
+  );
+  const [currency, setCurrency] = useState(currentBusiness?.default_currency || 'GHS');
+  const [hasUserEditedBiz, setHasUserEditedBiz] = useState(false);
+
+  const canEditWorkspace = currentRole === 'owner' || currentRole === 'admin';
+
+  useEffect(() => {
+    if (profile?.full_name && !hasUserEditedName) {
+      setFullName(profile.full_name);
+    }
+  }, [profile?.full_name, hasUserEditedName]);
+
+  useEffect(() => {
+    if (currentBusiness && !hasUserEditedBiz) {
+      setBusinessName(currentBusiness.business_name || '');
+      setBusinessType(currentBusiness.business_type || '');
+      setContactEmail(currentBusiness.contact_email || '');
+      setPhone(currentBusiness.phone || '');
+      setCity(currentBusiness.city || '');
+      setMeasurementUnit(currentBusiness.default_measurement_unit || 'cm');
+      setCurrency(currentBusiness.default_currency || 'GHS');
+    }
+  }, [currentBusiness, hasUserEditedBiz]);
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    setIsSaving(true);
+    setErrorMessage(null);
+    setSavedSuccess(false);
+
+    try {
+      const trimmedName = fullName.trim();
+      if (!trimmedName) {
+        throw new Error('Your profile name cannot be empty.');
+      }
+
+      // 1. Update personal profile (persists to Supabase, Dexie, and AuthContext)
+      const { error: profileError } = await updateProfile({
+        full_name: trimmedName,
+      });
+      if (profileError) throw profileError;
+
+      // 2. Update workspace profile if user is owner/admin
+      if (currentBusiness && canEditWorkspace) {
+        const { error: bizError } = await updateBusiness({
+          business_name: businessName.trim(),
+          business_type: businessType.trim(),
+          contact_email: contactEmail.trim(),
+          phone: phone.trim(),
+          city: city.trim(),
+          default_measurement_unit: measurementUnit,
+          default_currency: currency.trim() || 'GHS',
+        });
+        if (bizError) throw bizError;
+      }
+
+      setSavedSuccess(true);
+      setHasUserEditedName(false);
+      setHasUserEditedBiz(false);
+      setTimeout(() => setSavedSuccess(false), 3500);
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to update settings. Please check your connection and try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -36,7 +110,14 @@ export const SettingsPage: React.FC = () => {
       {savedSuccess && (
         <div className="p-3 bg-green-50 border border-green-200 rounded-md text-xs text-green-700 flex items-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-green-600 shrink-0" />
-          <span>Settings successfully updated.</span>
+          <span>Settings successfully updated. Your new profile name is now active across your workspace.</span>
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-md text-xs text-red-700 flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+          <span>{errorMessage}</span>
         </div>
       )}
 
@@ -50,32 +131,53 @@ export const SettingsPage: React.FC = () => {
 
           <Input
             label="Studio Name"
-            defaultValue={currentBusiness?.business_name || ''}
-            disabled={currentRole !== 'owner'}
+            value={businessName}
+            onChange={(e) => {
+              setBusinessName(e.target.value);
+              setHasUserEditedBiz(true);
+            }}
+            disabled={!canEditWorkspace}
           />
 
           <Input
             label="Studio Type"
-            defaultValue={currentBusiness?.business_type || ''}
-            disabled={currentRole !== 'owner'}
+            value={businessType}
+            onChange={(e) => {
+              setBusinessType(e.target.value);
+              setHasUserEditedBiz(true);
+            }}
+            disabled={!canEditWorkspace}
           />
 
           <Input
             label="Contact Email"
-            defaultValue={currentBusiness?.contact_email || ''}
-            disabled={currentRole !== 'owner'}
+            type="email"
+            value={contactEmail}
+            onChange={(e) => {
+              setContactEmail(e.target.value);
+              setHasUserEditedBiz(true);
+            }}
+            disabled={!canEditWorkspace}
           />
 
           <Input
             label="Phone Number"
-            defaultValue={currentBusiness?.phone || ''}
-            disabled={currentRole !== 'owner'}
+            value={phone}
+            onChange={(e) => {
+              setPhone(e.target.value);
+              setHasUserEditedBiz(true);
+            }}
+            disabled={!canEditWorkspace}
           />
 
           <Input
             label="City & Location"
-            defaultValue={currentBusiness?.city || ''}
-            disabled={currentRole !== 'owner'}
+            value={city}
+            onChange={(e) => {
+              setCity(e.target.value);
+              setHasUserEditedBiz(true);
+            }}
+            disabled={!canEditWorkspace}
           />
         </div>
 
@@ -86,30 +188,63 @@ export const SettingsPage: React.FC = () => {
             <span>Your Personal Profile</span>
           </h3>
 
-          <Input label="Your Name" defaultValue={profile?.full_name || ''} />
-          <Input label="Account Email" defaultValue={profile?.email || ''} disabled />
+          <Input
+            label="Your Name"
+            value={fullName}
+            onChange={(e) => {
+              setFullName(e.target.value);
+              setHasUserEditedName(true);
+            }}
+            placeholder="e.g. Master Kofi Mensah"
+            required
+            helperText="This name appears in your welcome message and studio records"
+          />
+
+          <Input
+            label="Account Email"
+            value={profile?.email || ''}
+            disabled
+            helperText="Linked to your login credentials"
+          />
 
           <div className="pt-2">
             <label className="block text-xs font-medium text-neutral-800 mb-1.5">
               Default Measurement Unit
             </label>
-            <Input
-              defaultValue={
-                currentBusiness?.default_measurement_unit === 'cm' ? 'Centimetres (cm)' : 'Inches (in)'
-              }
-              disabled
-            />
+            <select
+              value={measurementUnit}
+              onChange={(e) => {
+                setMeasurementUnit(e.target.value as 'cm' | 'inch');
+                setHasUserEditedBiz(true);
+              }}
+              disabled={!canEditWorkspace}
+              className="flex h-11 w-full rounded-md border border-[#E5E5E5] bg-white px-3.5 py-2 text-sm text-[#111111] focus:border-black focus:outline-none focus:ring-1 focus:ring-black disabled:cursor-not-allowed disabled:bg-neutral-50 disabled:text-neutral-500 transition-colors"
+            >
+              <option value="cm">Centimetres (cm)</option>
+              <option value="inch">Inches (in)</option>
+            </select>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-neutral-800 mb-1.5">
-              Default Currency
-            </label>
-            <Input defaultValue={currentBusiness?.default_currency || 'GHS'} disabled />
+            <Input
+              label="Default Currency"
+              value={currency}
+              onChange={(e) => {
+                setCurrency(e.target.value);
+                setHasUserEditedBiz(true);
+              }}
+              disabled={!canEditWorkspace}
+              placeholder="e.g. GHS, USD, GBP, EUR"
+            />
           </div>
 
           <div className="pt-4 flex justify-end">
-            <Button type="submit" size="sm" leftIcon={<Save className="w-4 h-4" />}>
+            <Button
+              type="submit"
+              size="sm"
+              isLoading={isSaving}
+              leftIcon={<Save className="w-4 h-4" />}
+            >
               Save Preferences
             </Button>
           </div>
@@ -118,4 +253,3 @@ export const SettingsPage: React.FC = () => {
     </div>
   );
 };
-

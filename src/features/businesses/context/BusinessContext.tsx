@@ -27,6 +27,7 @@ interface BusinessContextType {
   isLoading: boolean;
   switchBusiness: (businessId: string) => Promise<void>;
   createBusiness: (data: CreateBusinessInput) => Promise<{ business: Business | null; error: Error | null }>;
+  updateBusiness: (updates: Partial<Business>) => Promise<{ error: Error | null }>;
   inviteStaff: (email: string, role: BusinessRole) => Promise<{ error: Error | null }>;
   cancelInvitation: (invitationId: string) => Promise<{ error: Error | null }>;
   refreshBusiness: () => Promise<void>;
@@ -382,6 +383,41 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
+  const updateBusiness = async (updates: Partial<Business>): Promise<{ error: Error | null }> => {
+    if (!currentBusiness) {
+      return { error: new Error('No active business selected.') };
+    }
+
+    try {
+      const updatedBusiness: Business = {
+        ...currentBusiness,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (isLive) {
+        const { error: bErr } = await supabase
+          .from('businesses')
+          .update(updates)
+          .eq('id', currentBusiness.id);
+
+        if (bErr) throw bErr;
+      }
+
+      await db.businesses.put(updatedBusiness);
+
+      setCurrentBusiness(updatedBusiness);
+      setUserBusinesses((prev) =>
+        prev.map((b) => (b.id === updatedBusiness.id ? updatedBusiness : b))
+      );
+
+      return { error: null };
+    } catch (err) {
+      console.error('Error updating business:', err);
+      return { error: err as Error };
+    }
+  };
+
   return (
     <BusinessContext.Provider
       value={{
@@ -393,6 +429,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         isLoading,
         switchBusiness,
         createBusiness,
+        updateBusiness,
         inviteStaff,
         cancelInvitation,
         refreshBusiness,

@@ -17,6 +17,11 @@ interface AuthContextType {
   logout: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: Error | null }>;
   refreshProfile: () => Promise<void>;
+  updateProfile: (updates: {
+    full_name?: string;
+    phone?: string;
+    avatar_url?: string;
+  }) => Promise<{ error: Error | null }>;
   setDemoPlatformAdmin: (isAdmin: boolean) => void;
 }
 
@@ -44,6 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (data && !error) {
           setProfile(data as Profile);
+          await db.profiles.put(data as Profile);
+          localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data));
           // Check platform admin status
           const { data: adminData } = await supabase
             .from('platform_admins')
@@ -289,6 +296,91 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateProfile = async (updates: {
+    full_name?: string;
+    phone?: string;
+    avatar_url?: string;
+  }): Promise<{ error: Error | null }> => {
+    const userId = user?.id || profile?.id;
+    if (!userId) {
+      return { error: new Error('No active user found.') };
+    }
+
+    try {
+      const now = new Date().toISOString();
+      const updatedFields = {
+        ...updates,
+        updated_at: now,
+      };
+
+      if (isLive) {
+        // 1. Update public.profiles table in Supabase
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update(updatedFields)
+          .eq('id', userId);
+
+        if (profileError) {
+          const { error: upsertErr } = await supabase.from('profiles').upsert(
+            {
+              id: userId,
+              email: user?.email || profile?.email || '',
+              full_name: updates.full_name || profile?.full_name || 'Tailor',
+              ...updatedFields,
+            },
+            { onConflict: 'id' }
+          );
+          if (upsertErr) throw upsertErr;
+        }
+
+        // 2. Also update Supabase auth metadata if full_name is changed
+        if (updates.full_name) {
+          try {
+            await supabase.auth.updateUser({
+              data: { full_name: updates.full_name },
+            });
+          } catch (metaErr) {
+            console.warn('Could not update auth user metadata:', metaErr);
+          }
+        }
+      }
+
+      // 3. Update Dexie DB
+      const localExisting = await db.profiles.get(userId);
+      const baseFullName = updates.full_name || localExisting?.full_name || profile?.full_name || 'Tailor';
+      const newProfile: Profile = {
+        id: userId,
+        email: localExisting?.email || profile?.email || user?.email || '',
+        full_name: baseFullName,
+        phone: updates.phone !== undefined ? updates.phone : (localExisting?.phone || profile?.phone || null),
+        avatar_url: updates.avatar_url !== undefined ? updates.avatar_url : (localExisting?.avatar_url || profile?.avatar_url || null),
+        created_at: localExisting?.created_at || profile?.created_at || now,
+        updated_at: now,
+      };
+      await db.profiles.put(newProfile);
+
+      // 4. Update localStorage cache
+      localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(newProfile));
+
+      // 5. Update React states immediately
+      setProfile(newProfile);
+      if (user && updates.full_name) {
+        setUser({
+          ...user,
+          user_metadata: {
+            ...user.user_metadata,
+            full_name: updates.full_name,
+          },
+        });
+      }
+
+      return { error: null };
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      return { error: err as Error };
+    }
+  };
+
   const setDemoPlatformAdmin = (isAdmin: boolean) => {
     setIsPlatformAdmin(isAdmin);
     localStorage.setItem(LOCAL_STORAGE_IS_ADMIN_KEY, isAdmin ? 'true' : 'false');
@@ -308,6 +400,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logout,
         resetPassword,
         refreshProfile,
+        updateProfile,
         setDemoPlatformAdmin,
       }}
     >

@@ -66,7 +66,7 @@ export const DashboardPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-black">
-              Welcome, {profile?.full_name?.split(' ')[0] || 'Tailor'}
+              Welcome, {profile?.full_name || 'Tailor'}
             </h1>
             <Badge variant="outline" className="text-[10px]">
               {currentBusiness?.business_type}
