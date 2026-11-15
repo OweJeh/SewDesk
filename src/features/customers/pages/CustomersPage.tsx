@@ -5,6 +5,7 @@ import { customerService } from '@/features/customers/services/customerService';
 import type { Customer } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { DataLockOverlay } from '@/components/ui/DataLockOverlay';
 import { formatDate } from '@/lib/utils';
 import {
   Users,
@@ -14,13 +15,14 @@ import {
   Mail,
   MapPin,
   ChevronRight,
-  Sparkles,
+  AlertTriangle,
   ArrowUpDown,
   Filter,
 } from 'lucide-react';
 
 export const CustomersPage: React.FC = () => {
-  const { currentBusiness } = useCurrentBusiness();
+  const { currentBusiness, accessState } = useCurrentBusiness();
+  const { isDataLocked, canCreateCustomer, basePrice, tier, trialDaysLeft, maxSlots, slotsUsed } = accessState;
   const navigate = useNavigate();
 
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -28,8 +30,6 @@ export const CustomersPage: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'name' | 'id'>('newest');
   const [isLoading, setIsLoading] = useState(true);
-
-  const slotsUsed = currentBusiness?.customer_slots_used ?? 0;
 
   useEffect(() => {
     if (currentBusiness) {
@@ -62,7 +62,26 @@ export const CustomersPage: React.FC = () => {
     });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Data-Lock Overlay */}
+      {isDataLocked && (
+        <DataLockOverlay
+          basePrice={basePrice}
+          onUpgrade={() => window.location.assign('/app/subscription')}
+        />
+      )}
+
+      {/* Near-limit / expired banner */}
+      {!isDataLocked && !canCreateCustomer && (
+        <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-700 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            Trial limit reached ({slotsUsed} / {maxSlots} customers). 
+            {' '}<a href="/app/subscription" className="font-bold underline">Subscribe</a> to continue adding customers.
+          </span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-xl border border-[#E5E5E5] shadow-sm">
         <div>
@@ -77,11 +96,17 @@ export const CustomersPage: React.FC = () => {
           </p>
         </div>
 
-        <Link to="/app/customers/new">
-          <Button size="sm" leftIcon={<UserPlus className="w-4 h-4" />}>
+        {canCreateCustomer ? (
+          <Link to="/app/customers/new">
+            <Button size="sm" leftIcon={<UserPlus className="w-4 h-4" />}>
+              Register Customer
+            </Button>
+          </Link>
+        ) : (
+          <Button size="sm" disabled className="opacity-50 cursor-not-allowed" leftIcon={<UserPlus className="w-4 h-4" />}>
             Register Customer
           </Button>
-        </Link>
+        )}
       </div>
 
       {/* Search, Filter & Sort Controls */}

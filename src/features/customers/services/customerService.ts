@@ -6,6 +6,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { db } from '@/offline/database/dexie-db';
 import { generateUUID } from '@/lib/utils';
 import type { Customer } from '@/types';
+import { getSubscriptionConfig } from '@/features/subscriptions/services/subscriptionConfig';
 
 export interface CustomerNoteItem {
   id: string;
@@ -116,8 +117,12 @@ export const customerService = {
         if (bErr) throw bErr;
         currentSlots = bData?.customer_slots_used ?? 0;
 
-        // Check subscription if slots >= 100
-        if (currentSlots >= 100) {
+        const config = getSubscriptionConfig();
+        const override = config.studioOverrides[input.business_id] || {};
+        const studioLimit = override.customCustomerLimit ?? config.freeCustomerLimit;
+
+        // Check subscription if slots >= configured limit
+        if (currentSlots >= studioLimit) {
           const { data: subData } = await supabase
             .from('subscriptions')
             .select('status')
@@ -132,12 +137,16 @@ export const customerService = {
         currentSlots = localBiz?.customer_slots_used ?? 0;
       }
 
-      // Enforce the 100 free customer allowance
-      if (currentSlots >= 100 && !hasActiveSub) {
+      const config = getSubscriptionConfig();
+      const override = config.studioOverrides[input.business_id] || {};
+      const studioLimit = override.customCustomerLimit ?? config.freeCustomerLimit;
+
+      // Enforce the customer allowance
+      if (currentSlots >= studioLimit && !hasActiveSub) {
         return {
           customer: null,
           error: new Error(
-            'CUSTOMER_ALLOWANCE_EXCEEDED: Free allowance of 100 registered customers reached. An active paid subscription (GHS 150/mo) is required to register additional clients.'
+            `CUSTOMER_ALLOWANCE_EXCEEDED: Free allowance of ${studioLimit} registered customers reached. An active paid subscription (GHS ${config.baseTierPriceGHS}/mo Base or GHS ${config.proTierPriceGHS}/mo Pro) is required to register additional clients.`
           ),
         };
       }

@@ -3,7 +3,11 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { db } from '@/offline/database/dexie-db';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { generateUUID } from '@/lib/utils';
-import type { Business, BusinessMember, BusinessInvitation, BusinessRole } from '@/types';
+import type { Business, BusinessMember, BusinessInvitation, BusinessRole, Subscription } from '@/types';
+import {
+  evaluateStudioAccess,
+  type StudioAccessState,
+} from '@/features/subscriptions/services/subscriptionConfig';
 
 interface CreateBusinessInput {
   business_name: string;
@@ -25,6 +29,8 @@ interface BusinessContextType {
   members: BusinessMember[];
   invitations: BusinessInvitation[];
   hasActiveSubscription: boolean;
+  accessState: StudioAccessState;
+  isDataLocked: boolean;
   canCreateWorkspace: boolean;
   isLoading: boolean;
   switchBusiness: (businessId: string) => Promise<void>;
@@ -33,6 +39,8 @@ interface BusinessContextType {
   inviteStaff: (email: string, role: BusinessRole) => Promise<{ error: Error | null }>;
   cancelInvitation: (invitationId: string) => Promise<{ error: Error | null }>;
   activateSubscription: () => Promise<{ error: Error | null }>;
+  activateBaseTier: () => Promise<{ error: Error | null }>;
+  activateProTier: () => Promise<{ error: Error | null }>;
   cancelSubscription: () => Promise<{ error: Error | null }>;
   refreshBusiness: () => Promise<void>;
 }
@@ -49,8 +57,20 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [members, setMembers] = useState<BusinessMember[]>([]);
   const [invitations, setInvitations] = useState<BusinessInvitation[]>([]);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(false);
+  const [currentSubscription, setCurrentSubscription] = useState<Subscription | null>(null);
+  const [configVersion, setConfigVersion] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const isLive = isSupabaseConfigured();
+
+  useEffect(() => {
+    const handleConfigChange = () => setConfigVersion((v) => v + 1);
+    window.addEventListener('sewdesk_subscription_config_changed', handleConfigChange);
+    return () => window.removeEventListener('sewdesk_subscription_config_changed', handleConfigChange);
+  }, []);
+
+  const accessState = React.useMemo(() => {
+    return evaluateStudioAccess(currentBusiness, currentSubscription);
+  }, [currentBusiness, currentSubscription, configVersion]);
 
   const loadBusinessDetails = useCallback(async (businessId: string, userId: string) => {
     try {
@@ -103,12 +123,18 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           // Check subscription status
           const { data: subData } = await supabase
             .from('subscriptions')
-            .select('id, status')
+            .select('*')
             .eq('business_id', businessId)
             .eq('status', 'active')
             .maybeSingle();
 
-          setHasActiveSubscription(Boolean(subData));
+          if (subData) {
+            setCurrentSubscription(subData as Subscription);
+            setHasActiveSubscription(true);
+          } else {
+            setCurrentSubscription(null);
+            setHasActiveSubscription(false);
+          }
           return;
         }
       }
@@ -497,7 +523,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }
   };
 
-  const activateSubscription = async (): Promise<{ error: Error | null }> => {
+  const activateTier = async (planId: 'base_studio' | 'pro_studio'): Promise<{ error: Error | null }> => {
     if (!currentBusiness) {
       return { error: new Error('No active business selected.') };
     }
@@ -510,7 +536,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const { error } = await supabase.from('subscriptions').upsert(
           {
             business_id: currentBusiness.id,
-            plan_id: 'pro_studio',
+            plan_id: planId,
             status: 'active',
             started_at: now,
             expires_at: expiresAt,
@@ -521,7 +547,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         if (error) {
           await supabase.from('subscriptions').insert({
             business_id: currentBusiness.id,
-            plan_id: 'pro_studio',
+            plan_id: planId,
             status: 'active',
             started_at: now,
             expires_at: expiresAt,
@@ -529,13 +555,29 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         }
       }
 
+      const newSub: Subscription = {
+        id: generateUUID(),
+        business_id: currentBusiness.id,
+        plan_id: planId,
+        status: 'active',
+        started_at: now,
+        expires_at: expiresAt,
+        created_at: now,
+        updated_at: now,
+      };
+
+      setCurrentSubscription(newSub);
       setHasActiveSubscription(true);
       return { error: null };
     } catch (err) {
-      console.error('Error activating subscription:', err);
+      console.error('Error activating subscription tier:', err);
       return { error: err as Error };
     }
   };
+
+  const activateBaseTier = async () => activateTier('base_studio');
+  const activateProTier = async () => activateTier('pro_studio');
+  const activateSubscription = async () => activateProTier();
 
   const cancelSubscription = async (): Promise<{ error: Error | null }> => {
     if (!currentBusiness) {
@@ -551,6 +593,7 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
           .eq('status', 'active');
       }
 
+      setCurrentSubscription((prev) => (prev ? { ...prev, status: 'cancelled' } : null));
       setHasActiveSubscription(false);
       return { error: null };
     } catch (err) {
@@ -570,6 +613,8 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         members,
         invitations,
         hasActiveSubscription,
+        accessState,
+        isDataLocked: accessState.isDataLocked,
         canCreateWorkspace,
         isLoading,
         switchBusiness,
@@ -578,6 +623,8 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         inviteStaff,
         cancelInvitation,
         activateSubscription,
+        activateBaseTier,
+        activateProTier,
         cancelSubscription,
         refreshBusiness,
       }}
