@@ -4,7 +4,6 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Settings,
   ShieldCheck,
@@ -19,6 +18,8 @@ import {
   CheckCircle2,
   Server,
   Zap,
+  Copy,
+  Check,
 } from 'lucide-react';
 import { generateUUID } from '@/lib/utils';
 import type { Business, Customer, Order, Payment } from '@/types';
@@ -29,31 +30,73 @@ export const PlatformSettingsPage: React.FC = () => {
   const [storageEstimate, setStorageEstimate] = useState<{ usage: string; quota: string }>({ usage: '0 MB', quota: '0 MB' });
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedSuccess, setSeedSuccess] = useState(false);
-  const [isWiping, setIsWiping] = useState(false);
-  const [showWipeConfirm, setShowWipeConfirm] = useState(false);
+  const [copiedSql, setCopiedSql] = useState(false);
 
   const isLive = isSupabaseConfigured();
   const activeEmail = profile?.email || user?.email || 'owusujunior2004@gmail.com';
 
   const loadTelemetry = async () => {
     try {
-      const [bizCount, custCount, ordCount, payCount, mCount, profCount, memCount] = await Promise.all([
-        db.businesses.count(),
-        db.customers.count(),
-        db.orders.count(),
-        db.payments.count(),
-        db.measurementSets.count(),
-        db.profiles.count(),
-        db.businessMembers.count(),
-      ]);
+      let profCount = 0;
+      let bizCount = 0;
+      let custCount = 0;
+      let ordCount = 0;
+      let payCount = 0;
+      let memCount = 0;
+      let mCount = 0;
+
+      if (isLive) {
+        const [profRes, bizRes, custRes, ordRes, payRes, memRes] = await Promise.all([
+          supabase.from('profiles').select('*', { count: 'exact' }),
+          supabase.from('businesses').select('*', { count: 'exact' }),
+          supabase.from('customers').select('*', { count: 'exact' }),
+          supabase.from('orders').select('*', { count: 'exact' }),
+          supabase.from('payments').select('*', { count: 'exact' }),
+          supabase.from('business_members').select('*', { count: 'exact' }),
+        ]);
+
+        const [localProf, localBiz, localCust, localOrd, localPay, localM] = await Promise.all([
+          db.profiles.count(),
+          db.businesses.count(),
+          db.customers.count(),
+          db.orders.count(),
+          db.payments.count(),
+          db.measurementSets.count(),
+        ]);
+
+        profCount = profRes.data && profRes.data.length > 0 ? profRes.data.length : (profRes.count ?? localProf);
+        bizCount = bizRes.data && bizRes.data.length > 0 ? bizRes.data.length : (bizRes.count ?? localBiz);
+        custCount = custRes.count ?? localCust;
+        ordCount = ordRes.count ?? localOrd;
+        payCount = payRes.count ?? localPay;
+        memCount = memRes.count ?? 0;
+        mCount = localM;
+      } else {
+        const [bCount, cCount, oCount, pCount, mCountLocal, prCount, mbCount] = await Promise.all([
+          db.businesses.count(),
+          db.customers.count(),
+          db.orders.count(),
+          db.payments.count(),
+          db.measurementSets.count(),
+          db.profiles.count(),
+          db.businessMembers.count(),
+        ]);
+        bizCount = bCount;
+        custCount = cCount;
+        ordCount = oCount;
+        payCount = pCount;
+        mCount = mCountLocal;
+        profCount = prCount;
+        memCount = mbCount;
+      }
 
       setTableCounts({
+        profiles: profCount,
         businesses: bizCount,
         customers: custCount,
         orders: ordCount,
         payments: payCount,
         measurementSets: mCount,
-        profiles: profCount,
         businessMembers: memCount,
       });
 
@@ -70,7 +113,34 @@ export const PlatformSettingsPage: React.FC = () => {
 
   useEffect(() => {
     loadTelemetry();
-  }, []);
+  }, [isLive]);
+
+  // Copy SQL script for Supabase SQL Editor
+  const handleCopySql = () => {
+    const sql = `-- Run this in Supabase SQL Editor to grant owusujunior2004@gmail.com full multi-tenant visibility
+CREATE OR REPLACE FUNCTION public.is_platform_admin()
+RETURNS BOOLEAN LANGUAGE sql SECURITY DEFINER SET search_path = public STABLE AS $$
+  SELECT (LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'owusujunior2004@gmail.com')
+  OR EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND LOWER(email) = 'owusujunior2004@gmail.com')
+  OR EXISTS (SELECT 1 FROM public.platform_admins WHERE profile_id = auth.uid());
+$$;
+
+INSERT INTO public.platform_admins (profile_id)
+SELECT id FROM public.profiles WHERE LOWER(email) = 'owusujunior2004@gmail.com'
+ON CONFLICT (profile_id) DO NOTHING;
+
+DROP POLICY IF EXISTS "Platform admin can view all profiles" ON public.profiles;
+CREATE POLICY "Platform admin can view all profiles" ON public.profiles FOR SELECT TO authenticated
+USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'owusujunior2004@gmail.com');
+
+DROP POLICY IF EXISTS "Platform admin can view all businesses" ON public.businesses;
+CREATE POLICY "Platform admin can view all businesses" ON public.businesses FOR SELECT TO authenticated
+USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'owusujunior2004@gmail.com');`;
+
+    navigator.clipboard.writeText(sql);
+    setCopiedSql(true);
+    setTimeout(() => setCopiedSql(false), 3000);
+  };
 
   // Export full JSON dump
   const handleFullBackup = async () => {
@@ -118,7 +188,7 @@ export const PlatformSettingsPage: React.FC = () => {
         city: 'Accra',
         default_currency: 'GHS',
         default_measurement_unit: 'cm',
-        customer_slots_used: 120, // Pro tier
+        customer_slots_used: 120,
         created_at: now,
         updated_at: now,
       };
@@ -135,14 +205,13 @@ export const PlatformSettingsPage: React.FC = () => {
         city: 'Kumasi',
         default_currency: 'GHS',
         default_measurement_unit: 'inch',
-        customer_slots_used: 45, // Free tier
+        customer_slots_used: 45,
         created_at: now,
         updated_at: now,
       };
 
       await db.businesses.bulkPut([demoBiz1, demoBiz2]);
 
-      // Seed 2 customers
       const cust1Id = generateUUID();
       const cust2Id = generateUUID();
 
@@ -178,7 +247,6 @@ export const PlatformSettingsPage: React.FC = () => {
 
       await db.customers.bulkPut([cust1, cust2]);
 
-      // Seed 2 orders
       const ord1Id = generateUUID();
       const ord2Id = generateUUID();
 
@@ -218,7 +286,6 @@ export const PlatformSettingsPage: React.FC = () => {
 
       await db.orders.bulkPut([ord1, ord2]);
 
-      // Seed 2 payments
       const pay1: Payment = {
         id: generateUUID(),
         business_id: biz1Id,
@@ -333,7 +400,7 @@ export const PlatformSettingsPage: React.FC = () => {
             <div className="flex items-center justify-between py-1">
               <span className="text-neutral-400">Database Driver:</span>
               <span className="font-mono text-neutral-300">
-                {isLive ? 'Supabase PostgreSQL (Live)' : 'Dexie IndexedDB (Offline-First)'}
+                {isLive ? 'Supabase PostgreSQL (Live Connected)' : 'Dexie IndexedDB (Offline-First)'}
               </span>
             </div>
           </div>
@@ -343,46 +410,68 @@ export const PlatformSettingsPage: React.FC = () => {
         <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 space-y-4">
           <div className="flex items-center gap-2 pb-3 border-b border-neutral-800">
             <Database className="w-5 h-5 text-blue-400" />
-            <h2 className="text-sm font-bold text-white">Storage Telemetry</h2>
+            <h2 className="text-sm font-bold text-white">Live Storage Telemetry</h2>
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div className="p-3 bg-neutral-950/60 rounded-xl border border-neutral-800/80">
-              <span className="text-[10px] uppercase text-neutral-500 block">Storage Usage</span>
+              <span className="text-[10px] uppercase text-neutral-500 block">Active Users</span>
               <span className="font-mono font-bold text-white text-base mt-0.5 block">
-                {storageEstimate.usage}
+                {tableCounts.profiles ?? 0}
               </span>
-              <span className="text-[10px] text-neutral-500">Quota: {storageEstimate.quota}</span>
+              <span className="text-[10px] text-neutral-500">Verified Tailor Accounts</span>
             </div>
 
             <div className="p-3 bg-neutral-950/60 rounded-xl border border-neutral-800/80">
-              <span className="text-[10px] uppercase text-neutral-500 block">Total Studios</span>
+              <span className="text-[10px] uppercase text-neutral-500 block">Studio Workspaces</span>
               <span className="font-mono font-bold text-white text-base mt-0.5 block">
                 {tableCounts.businesses ?? 0}
               </span>
-              <span className="text-[10px] text-neutral-500">{tableCounts.profiles ?? 0} user profiles</span>
+              <span className="text-[10px] text-neutral-500">Registered Tenants</span>
             </div>
           </div>
 
           <div className="space-y-2 pt-2 border-t border-neutral-800/80 text-xs">
             <div className="flex justify-between text-neutral-400">
-              <span>Clients Table:</span>
+              <span>Tailoring Clients:</span>
               <span className="font-mono text-white font-medium">{tableCounts.customers ?? 0} records</span>
             </div>
             <div className="flex justify-between text-neutral-400">
-              <span>Orders Table:</span>
+              <span>Orders Placed:</span>
               <span className="font-mono text-white font-medium">{tableCounts.orders ?? 0} records</span>
             </div>
             <div className="flex justify-between text-neutral-400">
-              <span>Payments Table:</span>
+              <span>Reconciled Payments:</span>
               <span className="font-mono text-white font-medium">{tableCounts.payments ?? 0} records</span>
             </div>
             <div className="flex justify-between text-neutral-400">
-              <span>Measurement Sets:</span>
-              <span className="font-mono text-white font-medium">{tableCounts.measurementSets ?? 0} sessions</span>
+              <span>IndexedDB Cache Usage:</span>
+              <span className="font-mono text-neutral-300 font-medium">{storageEstimate.usage}</span>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Supabase Multi-Tenant SQL Policy Quick Copy */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 space-y-3">
+        <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+          <div className="flex items-center gap-2">
+            <Key className="w-5 h-5 text-amber-400" />
+            <h2 className="text-sm font-bold text-white">Supabase Admin SQL Sync Policy</h2>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleCopySql}
+            className="border-neutral-700 text-xs gap-1.5 h-8 text-white hover:bg-neutral-800"
+          >
+            {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+            <span>{copiedSql ? 'Copied to Clipboard!' : 'Copy SQL Sync Query'}</span>
+          </Button>
+        </div>
+        <p className="text-xs text-neutral-400 leading-relaxed">
+          If you have active users registered in Supabase that are restricted by PostgreSQL Row-Level Security, running this SQL snippet in your <span className="text-white font-mono">Supabase SQL Editor</span> guarantees that <span className="text-white font-mono">owusujunior2004@gmail.com</span> has unrestricted visibility across all multi-tenant accounts.
+        </p>
       </div>
 
       {/* Global Subscription Parameters */}

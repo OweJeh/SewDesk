@@ -58,7 +58,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await db.profiles.put(data as Profile);
           localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data));
           // Hard-locked: only owusujunior2004@gmail.com is a platform admin
-          setIsPlatformAdmin(checkIsPlatformAdmin((data as Profile).email));
+          const isAdmin = checkIsPlatformAdmin((data as Profile).email);
+          setIsPlatformAdmin(isAdmin);
+          if (isAdmin) {
+            try {
+              await supabase.from('platform_admins').upsert({ profile_id: userId }, { onConflict: 'profile_id' });
+            } catch {
+              // Non-blocking
+            }
+          }
           return;
         }
       }

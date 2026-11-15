@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { Business, Customer, Order, Payment } from '@/types';
+import type { Business, Customer, Order, Payment, Profile, BusinessMember } from '@/types';
 import {
   Building2,
   Users,
@@ -20,17 +20,23 @@ import {
   CheckCircle2,
   Scissors,
   Layers,
+  UserCheck,
+  Mail,
+  ShieldCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export const PlatformDashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
   const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [businessMembers, setBusinessMembers] = useState<BusinessMember[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [measurementCount, setMeasurementCount] = useState(0);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState<'orders' | 'users' | 'studios'>('users');
 
   const isLive = isSupabaseConfigured();
 
@@ -38,27 +44,61 @@ export const PlatformDashboardPage: React.FC = () => {
     setIsLoading(true);
     try {
       if (isLive) {
-        const [bizRes, custRes, ordRes, payRes] = await Promise.all([
+        const [profRes, bizRes, memRes, custRes, ordRes, payRes] = await Promise.all([
+          supabase.from('profiles').select('*').order('created_at', { ascending: false }),
           supabase.from('businesses').select('*').order('created_at', { ascending: false }),
+          supabase.from('business_members').select('*'),
           supabase.from('customers').select('*').order('created_at', { ascending: false }),
           supabase.from('orders').select('*').order('created_at', { ascending: false }),
           supabase.from('payments').select('*').order('created_at', { ascending: false }),
         ]);
 
-        if (bizRes.data) setBusinesses(bizRes.data as Business[]);
-        if (custRes.data) setCustomers(custRes.data as Customer[]);
-        if (ordRes.data) setOrders(ordRes.data as Order[]);
-        if (payRes.data) setPayments(payRes.data as Payment[]);
+        let loadedProfiles: Profile[] = [];
+        let loadedBusinesses: Business[] = [];
+        let loadedCustomers: Customer[] = [];
+        let loadedOrders: Order[] = [];
+        let loadedPayments: Payment[] = [];
+        let loadedMembers: BusinessMember[] = [];
+
+        if (profRes.data && profRes.data.length > 0) {
+          loadedProfiles = profRes.data as Profile[];
+          await db.profiles.bulkPut(loadedProfiles);
+        } else {
+          loadedProfiles = await db.profiles.toArray();
+        }
+
+        if (bizRes.data && bizRes.data.length > 0) {
+          loadedBusinesses = bizRes.data as Business[];
+          await db.businesses.bulkPut(loadedBusinesses);
+        } else {
+          loadedBusinesses = await db.businesses.toArray();
+        }
+
+        if (memRes.data) loadedMembers = memRes.data as BusinessMember[];
+        if (custRes.data) loadedCustomers = custRes.data as Customer[];
+        if (ordRes.data) loadedOrders = ordRes.data as Order[];
+        if (payRes.data) loadedPayments = payRes.data as Payment[];
+
+        setProfiles(loadedProfiles);
+        setBusinesses(loadedBusinesses);
+        setBusinessMembers(loadedMembers);
+        setCustomers(loadedCustomers);
+        setOrders(loadedOrders);
+        setPayments(loadedPayments);
       } else {
-        const [bizData, custData, ordData, payData, mCount] = await Promise.all([
+        const [profData, bizData, memData, custData, ordData, payData, mCount] = await Promise.all([
+          db.profiles.toArray(),
           db.businesses.toArray(),
+          db.businessMembers.toArray(),
           db.customers.toArray(),
           db.orders.toArray(),
           db.payments.toArray(),
           db.measurementSets.count(),
         ]);
 
+        setProfiles(profData);
         setBusinesses(bizData);
+        setBusinessMembers(memData);
         setCustomers(custData);
         setOrders(ordData);
         setPayments(payData);
@@ -92,6 +132,12 @@ export const PlatformDashboardPage: React.FC = () => {
   const customerMap = new Map<string, string>();
   customers.forEach((c) => customerMap.set(c.id, c.full_name));
 
+  // Owner profile map
+  const ownerBizMap = new Map<string, Business>();
+  businesses.forEach((b) => {
+    if (b.owner_profile_id) ownerBizMap.set(b.owner_profile_id, b);
+  });
+
   const getStatusBadge = (status: Order['status']) => {
     switch (status) {
       case 'ready':
@@ -121,11 +167,11 @@ export const PlatformDashboardPage: React.FC = () => {
               ROOT ADMIN
             </Badge>
             <Badge variant="outline" className="border-neutral-700 text-neutral-400 text-[10px] font-mono">
-              {isLive ? 'Supabase Live' : 'Dexie IndexedDB'}
+              {isLive ? 'Supabase Live Connected' : 'Dexie IndexedDB'}
             </Badge>
           </div>
           <p className="text-xs text-neutral-400 mt-1">
-            Realtime tenant monitoring across all tailoring studios and workshops.
+            Realtime tenant telemetry across all registered user accounts, studio workspaces, and workshops.
           </p>
         </div>
 
@@ -141,18 +187,37 @@ export const PlatformDashboardPage: React.FC = () => {
             className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 text-xs gap-1.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
+            <span>Refresh All</span>
           </Button>
         </div>
       </div>
 
-      {/* Primary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+      {/* Primary KPI Cards Grid (5 Responsive Metrics) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
+        {/* Total Active Users (Supabase Auth / Profiles) */}
+        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl hover:border-neutral-700 transition-colors">
+          <div className="flex items-center justify-between text-neutral-400">
+            <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              Active Users
+            </span>
+            <div className="p-2 bg-blue-950/60 text-blue-400 border border-blue-900/60 rounded-lg">
+              <UserCheck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="mt-3 text-2xl sm:text-3xl font-mono font-bold text-white">
+            {profiles.length}
+          </div>
+          <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500 pt-2 border-t border-neutral-800/80">
+            <span>Verified tailor & staff accounts</span>
+            <span className="font-mono text-emerald-400 text-[10px]">LIVE AUTH</span>
+          </div>
+        </div>
+
         {/* Total Studios */}
         <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl hover:border-neutral-700 transition-colors">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
-              Registered Studios
+              Studio Tenants
             </span>
             <div className="p-2 bg-neutral-800/80 rounded-lg text-white">
               <Building2 className="w-4 h-4" />
@@ -205,7 +270,7 @@ export const PlatformDashboardPage: React.FC = () => {
             {orders.length}
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500 pt-2 border-t border-neutral-800/80">
-            <span className="text-blue-400">{activeOrders.length} in production</span>
+            <span className="text-blue-400">{activeOrders.length} active</span>
             <span>{orders.filter((o) => o.status === 'delivered').length} delivered</span>
           </div>
         </div>
@@ -242,7 +307,7 @@ export const PlatformDashboardPage: React.FC = () => {
           </div>
         </div>
         <div className="space-y-0.5">
-          <div className="text-[10px] text-neutral-500 uppercase tracking-wider">Completed Payments</div>
+          <div className="text-[10px] text-neutral-500 uppercase tracking-wider">Reconciled Payments</div>
           <div className="font-mono font-semibold text-white">
             {payments.length} transactions
           </div>
@@ -261,24 +326,132 @@ export const PlatformDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Grid: Recent Orders & Recent Studios */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Platform Orders (2 cols) */}
-        <div className="lg:col-span-2 bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden flex flex-col">
-          <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShoppingBag className="w-4 h-4 text-neutral-400" />
-              <h2 className="text-sm font-bold text-white">Recent Cross-Studio Orders</h2>
-            </div>
-            <Link
-              to="/platform/transactions"
-              className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium"
+      {/* Interactive Tabs: User Accounts | Recent Orders | Studios */}
+      <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden flex flex-col">
+        {/* Tab Headers */}
+        <div className="p-3 sm:p-4 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('users')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                activeTab === 'users'
+                  ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
             >
-              <span>View all transactions</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
+              <UserCheck className="w-3.5 h-3.5 text-blue-400" />
+              <span>Active Tailor Accounts ({profiles.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                activeTab === 'orders'
+                  ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-amber-400" />
+              <span>Cross-Studio Orders ({orders.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('studios')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                activeTab === 'studios'
+                  ? 'bg-neutral-800 text-white shadow-sm border border-neutral-700'
+                  : 'text-neutral-400 hover:text-white'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Studios ({businesses.length})</span>
+            </button>
           </div>
 
+          <Link
+            to={activeTab === 'users' ? '/platform/settings' : activeTab === 'orders' ? '/platform/transactions' : '/platform/businesses'}
+            className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium"
+          >
+            <span>Full details</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {/* Tab Content: Users Directory */}
+        {activeTab === 'users' && (
+          <div className="overflow-x-auto flex-1">
+            {profiles.length === 0 ? (
+              <div className="p-8 text-center text-xs text-neutral-500 space-y-2">
+                <UserCheck className="w-8 h-8 mx-auto text-neutral-700" />
+                <p>No user accounts loaded.</p>
+              </div>
+            ) : (
+              <table className="w-full text-left text-xs">
+                <thead className="bg-neutral-950/60 border-b border-neutral-800 text-[10px] uppercase font-mono tracking-wider text-neutral-400">
+                  <tr>
+                    <th className="py-3 px-4">User / Tailor</th>
+                    <th className="py-3 px-4">Contact Email</th>
+                    <th className="py-3 px-4">Assigned Workspace</th>
+                    <th className="py-3 px-4 text-center">Platform Role</th>
+                    <th className="py-3 px-4 text-right">Joined</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-neutral-800/60 font-sans">
+                  {profiles.map((p) => {
+                    const ownedBiz = ownerBizMap.get(p.id);
+                    const isHardLockedAdmin = p.email.toLowerCase() === 'owusujunior2004@gmail.com';
+                    return (
+                      <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors">
+                        <td className="py-3 px-4">
+                          <div className="font-semibold text-white flex items-center gap-2">
+                            <span>{p.full_name || p.email.split('@')[0]}</span>
+                            {isHardLockedAdmin && (
+                              <Badge variant="default" className="bg-red-600 text-white text-[9px] font-mono px-1 py-0">
+                                ROOT OPS
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-[10px] font-mono text-neutral-500 truncate max-w-[160px]">
+                            {p.id}
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-neutral-300 font-mono text-[11px]">
+                          {p.email}
+                        </td>
+                        <td className="py-3 px-4 text-neutral-300">
+                          {ownedBiz ? (
+                            <span className="font-medium text-white">{ownedBiz.business_name}</span>
+                          ) : (
+                            <span className="text-neutral-500 italic">Workspace Active / Staff</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {isHardLockedAdmin ? (
+                            <Badge variant="default" className="bg-red-950 text-red-400 border border-red-800 text-[9px] font-mono">
+                              PLATFORM ADMIN
+                            </Badge>
+                          ) : ownedBiz ? (
+                            <Badge variant="outline" className="border-neutral-700 text-neutral-300 text-[9px]">
+                              STUDIO OWNER
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-neutral-800 text-neutral-400 text-[9px]">
+                              STAFF TAILOR
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-right text-neutral-400 font-mono text-[11px]">
+                          {formatDate(p.created_at)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        )}
+
+        {/* Tab Content: Orders */}
+        {activeTab === 'orders' && (
           <div className="overflow-x-auto flex-1">
             {orders.length === 0 ? (
               <div className="p-8 text-center text-xs text-neutral-500 space-y-2">
@@ -298,9 +471,9 @@ export const PlatformDashboardPage: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-800/60 font-sans">
-                  {orders.slice(0, 8).map((ord) => {
-                    const studioName = businessMap.get(ord.business_id) || 'Unknown Studio';
-                    const clientName = customerMap.get(ord.customer_id) || ord.customer?.full_name || 'Walk-in';
+                  {orders.slice(0, 10).map((ord) => {
+                    const studioName = businessMap.get(ord.business_id) || 'Studio';
+                    const clientName = customerMap.get(ord.customer_id) || ord.customer?.full_name || 'Client';
                     return (
                       <tr key={ord.id} className="hover:bg-neutral-800/40 transition-colors">
                         <td className="py-3 px-4 font-mono font-medium text-white">
@@ -328,37 +501,23 @@ export const PlatformDashboardPage: React.FC = () => {
               </table>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Registered Studios Spotlight (1 col) */}
-        <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden flex flex-col">
-          <div className="p-4 sm:p-5 border-b border-neutral-800 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-neutral-400" />
-              <h2 className="text-sm font-bold text-white">Active Studios</h2>
-            </div>
-            <Link
-              to="/platform/businesses"
-              className="text-xs text-neutral-400 hover:text-white flex items-center gap-1 font-medium"
-            >
-              <span>Manage all</span>
-              <ArrowUpRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-
-          <div className="p-4 space-y-3 flex-1 overflow-y-auto max-h-[420px]">
+        {/* Tab Content: Studios */}
+        {activeTab === 'studios' && (
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {businesses.length === 0 ? (
-              <div className="py-8 text-center text-xs text-neutral-500">
-                No businesses registered yet.
+              <div className="col-span-full py-8 text-center text-xs text-neutral-500">
+                No studio workspaces provisioned yet.
               </div>
             ) : (
-              businesses.slice(0, 6).map((b) => (
+              businesses.map((b) => (
                 <div
                   key={b.id}
-                  className="p-3 bg-neutral-950/60 border border-neutral-800 rounded-xl space-y-1.5 hover:border-neutral-700 transition-colors"
+                  className="p-3.5 bg-neutral-950/60 border border-neutral-800 rounded-xl space-y-2 hover:border-neutral-700 transition-colors"
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-xs text-white truncate max-w-[170px]">
+                    <span className="font-semibold text-xs text-white truncate max-w-[180px]">
                       {b.business_name}
                     </span>
                     <Badge
@@ -369,27 +528,22 @@ export const PlatformDashboardPage: React.FC = () => {
                           : 'border-neutral-700 text-neutral-400'
                       }`}
                     >
-                      {(b.customer_slots_used || 0) > 100 ? 'PRO' : 'FREE TIER'}
+                      {(b.customer_slots_used || 0) > 100 ? 'PRO' : 'FREE'}
                     </Badge>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-neutral-400">
-                    <span>
-                      {b.city ? `${b.city}, ` : ''}{b.country || 'Ghana'}
-                    </span>
-                    <span className="font-mono text-neutral-500">
-                      {b.customer_slots_used || 0} clients
-                    </span>
+                  <div className="text-[11px] text-neutral-400">
+                    {b.city ? `${b.city}, ` : ''}{b.country || 'Ghana'} &bull; <span className="font-mono text-neutral-300">{b.customer_slots_used || 0} clients</span>
                   </div>
 
                   <div className="text-[10px] text-neutral-500 font-mono truncate pt-1 border-t border-neutral-900">
-                    {b.contact_email || 'No contact email'}
+                    {b.contact_email || 'No email'}
                   </div>
                 </div>
               ))
             )}
           </div>
-        </div>
+        )}
       </div>
 
       {/* Security & Multi-Tenant Isolation Notice */}
@@ -399,9 +553,9 @@ export const PlatformDashboardPage: React.FC = () => {
             <ShieldAlert className="w-4 h-4" />
           </div>
           <div>
-            <div className="font-semibold text-white">Strict Multi-Tenant Separation Active</div>
+            <div className="font-semibold text-white">Multi-Tenant Isolation & Account Directory</div>
             <p className="text-[11px] text-neutral-500">
-              Platform operator metrics are aggregated securely. Individual tenant measurement cards and client photo vaults remain private to their respective studio owners.
+              Platform operator metrics are synchronized directly from Supabase and Dexie. Tailor customer records remain isolated within each studio's workspace boundary.
             </p>
           </div>
         </div>
