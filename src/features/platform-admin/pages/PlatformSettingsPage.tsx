@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { generateUUID } from '@/lib/utils';
 import type { Business, Customer, Order, Payment } from '@/types';
+import { getSubscriptionConfig } from '@/features/subscriptions/services/subscriptionConfig';
 
 export const PlatformSettingsPage: React.FC = () => {
   const { profile, user } = useAuth();
@@ -31,6 +32,8 @@ export const PlatformSettingsPage: React.FC = () => {
   const [isSeeding, setIsSeeding] = useState(false);
   const [seedSuccess, setSeedSuccess] = useState(false);
   const [copiedSql, setCopiedSql] = useState(false);
+  const [copiedSubSql, setCopiedSubSql] = useState(false);
+  const [subConfig, setSubConfig] = useState(getSubscriptionConfig());
 
   const isLive = isSupabaseConfigured();
   const activeEmail = profile?.email || user?.email || 'owusujunior2004@gmail.com';
@@ -113,6 +116,9 @@ export const PlatformSettingsPage: React.FC = () => {
 
   useEffect(() => {
     loadTelemetry();
+    const handleCfgChange = () => setSubConfig(getSubscriptionConfig());
+    window.addEventListener('sewdesk_subscription_config_changed', handleCfgChange);
+    return () => window.removeEventListener('sewdesk_subscription_config_changed', handleCfgChange);
   }, [isLive]);
 
   // Copy SQL script for Supabase SQL Editor
@@ -140,6 +146,66 @@ USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', ''))
     navigator.clipboard.writeText(sql);
     setCopiedSql(true);
     setTimeout(() => setCopiedSql(false), 3000);
+  };
+
+  const handleCopySubscriptionSql = () => {
+    const sql = `-- SEWDESK SUBSCRIPTION SYSTEM & STUDIO OVERRIDES MIGRATION
+-- Run in Supabase SQL Editor to enable full cloud-synced subscription controls
+
+CREATE TABLE IF NOT EXISTS public.platform_subscription_settings (
+  id TEXT PRIMARY KEY DEFAULT 'global',
+  trial_type TEXT NOT NULL DEFAULT 'both' CHECK (trial_type IN ('both', 'customer_quota', 'trial_days')),
+  free_customer_limit INT NOT NULL DEFAULT 15,
+  free_trial_days INT NOT NULL DEFAULT 14,
+  base_tier_price_ghs NUMERIC(10, 2) NOT NULL DEFAULT 50.00,
+  pro_tier_price_ghs NUMERIC(10, 2) NOT NULL DEFAULT 150.00,
+  lock_data_when_expired BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO public.platform_subscription_settings (id, trial_type, free_customer_limit, free_trial_days, base_tier_price_ghs, pro_tier_price_ghs, lock_data_when_expired, updated_at)
+VALUES ('global', 'both', 15, 14, 50.00, 150.00, TRUE, NOW())
+ON CONFLICT (id) DO NOTHING;
+
+CREATE TABLE IF NOT EXISTS public.studio_subscription_overrides (
+  business_id UUID PRIMARY KEY REFERENCES public.businesses(id) ON DELETE CASCADE,
+  custom_customer_limit INT,
+  custom_lock_data BOOLEAN,
+  force_tier TEXT CHECK (force_tier IN ('free_trial', 'base', 'pro', 'expired')),
+  grace_period_until TIMESTAMPTZ,
+  notes TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE public.platform_subscription_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.studio_subscription_overrides ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can read platform subscription settings" ON public.platform_subscription_settings;
+CREATE POLICY "Anyone can read platform subscription settings" ON public.platform_subscription_settings FOR SELECT TO authenticated, anon USING (TRUE);
+
+DROP POLICY IF EXISTS "Platform admin can manage subscription settings" ON public.platform_subscription_settings;
+CREATE POLICY "Platform admin can manage subscription settings" ON public.platform_subscription_settings FOR ALL TO authenticated
+USING (public.is_platform_admin() OR (LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'owusujunior2004@gmail.com'))
+WITH CHECK (public.is_platform_admin() OR (LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'owusujunior2004@gmail.com'));
+
+DROP POLICY IF EXISTS "Platform admin can view all studio overrides" ON public.studio_subscription_overrides;
+CREATE POLICY "Platform admin can view all studio overrides" ON public.studio_subscription_overrides FOR SELECT TO authenticated
+USING (public.is_platform_admin() OR (LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'owusujunior2004@gmail.com'));
+
+DROP POLICY IF EXISTS "Studio members can view own override" ON public.studio_subscription_overrides;
+CREATE POLICY "Studio members can view own override" ON public.studio_subscription_overrides FOR SELECT TO authenticated
+USING (EXISTS (SELECT 1 FROM public.business_members WHERE business_members.business_id = studio_subscription_overrides.business_id AND business_members.profile_id = auth.uid()));
+
+DROP POLICY IF EXISTS "Platform admin can manage studio overrides" ON public.studio_subscription_overrides;
+CREATE POLICY "Platform admin can manage studio overrides" ON public.studio_subscription_overrides FOR ALL TO authenticated
+USING (public.is_platform_admin() OR (LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'owusujunior2004@gmail.com'))
+WITH CHECK (public.is_platform_admin() OR (LOWER(COALESCE(auth.jwt() ->> 'email', '')) = 'owusujunior2004@gmail.com'));`;
+
+    navigator.clipboard.writeText(sql);
+    setCopiedSubSql(true);
+    setTimeout(() => setCopiedSubSql(false), 3000);
   };
 
   // Export full JSON dump
@@ -454,23 +520,34 @@ USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', ''))
 
       {/* Supabase Multi-Tenant SQL Policy Quick Copy */}
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 space-y-3">
-        <div className="flex items-center justify-between pb-2 border-b border-neutral-800">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-2 border-b border-neutral-800">
           <div className="flex items-center gap-2">
             <Key className="w-5 h-5 text-amber-400" />
-            <h2 className="text-sm font-bold text-white">Supabase Admin SQL Sync Policy</h2>
+            <h2 className="text-sm font-bold text-white">Supabase Admin SQL &amp; Subscription Schema Sync</h2>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleCopySql}
-            className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 h-8 shadow-sm"
-          >
-            {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-black" />}
-            <span className="text-black font-semibold">{copiedSql ? 'Copied to Clipboard!' : 'Copy SQL Sync Query'}</span>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopySql}
+              className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 h-8 shadow-sm"
+            >
+              {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-black" />}
+              <span className="text-black font-semibold">{copiedSql ? 'Admin SQL Copied!' : 'Copy Admin Auth SQL'}</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCopySubscriptionSql}
+              className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 h-8 shadow-sm"
+            >
+              {copiedSubSql ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-black" />}
+              <span className="text-black font-semibold">{copiedSubSql ? 'Subscription SQL Copied!' : 'Copy Subscription Schema SQL'}</span>
+            </Button>
+          </div>
         </div>
         <p className="text-xs text-neutral-400 leading-relaxed">
-          If you have active users registered in Supabase that are restricted by PostgreSQL Row-Level Security, running this SQL snippet in your <span className="text-white font-mono">Supabase SQL Editor</span> guarantees that <span className="text-white font-mono">owusujunior2004@gmail.com</span> has unrestricted visibility across all multi-tenant accounts.
+          Run these SQL migrations in your <span className="text-white font-mono">Supabase SQL Editor</span> to grant <span className="text-white font-mono">owusujunior2004@gmail.com</span> root visibility and create the <span className="text-white font-mono">platform_subscription_settings</span> and <span className="text-white font-mono">studio_subscription_overrides</span> tables.
         </p>
       </div>
 
@@ -478,26 +555,34 @@ USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', ''))
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl p-5 sm:p-6 space-y-4">
         <div className="flex items-center gap-2 pb-3 border-b border-neutral-800">
           <Sliders className="w-5 h-5 text-amber-400" />
-          <h2 className="text-sm font-bold text-white">Platform Subscription Rules</h2>
+          <h2 className="text-sm font-bold text-white">Live Platform Subscription Rules</h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
           <div className="p-4 bg-neutral-950/60 border border-neutral-800 rounded-xl space-y-1">
-            <span className="text-[10px] uppercase tracking-wider text-neutral-500">Standard Tier Fee</span>
-            <div className="font-mono font-bold text-lg text-emerald-400">GHS 150.00 / mo</div>
-            <p className="text-[11px] text-neutral-400">Flat rate across all West African tailoring studios</p>
+            <span className="text-[10px] uppercase tracking-wider text-neutral-500">Base Tier Fee</span>
+            <div className="font-mono font-bold text-lg text-amber-400">GHS {subConfig.baseTierPriceGHS}.00 / mo</div>
+            <p className="text-[11px] text-neutral-400">Standard studio usage with unlimited customer quota</p>
           </div>
 
           <div className="p-4 bg-neutral-950/60 border border-neutral-800 rounded-xl space-y-1">
-            <span className="text-[10px] uppercase tracking-wider text-neutral-500">Free Tier Limit</span>
-            <div className="font-mono font-bold text-lg text-white">100 Clients Max</div>
-            <p className="text-[11px] text-neutral-400">Strict gate enforced on the 101st client registration</p>
+            <span className="text-[10px] uppercase tracking-wider text-neutral-500">Pro Tier Fee</span>
+            <div className="font-mono font-bold text-lg text-emerald-400">GHS {subConfig.proTierPriceGHS}.00 / mo</div>
+            <p className="text-[11px] text-neutral-400">Unlimited clients, photo storage, templates & staff</p>
           </div>
 
           <div className="p-4 bg-neutral-950/60 border border-neutral-800 rounded-xl space-y-1">
-            <span className="text-[10px] uppercase tracking-wider text-neutral-500">Workspace Policy</span>
-            <div className="font-mono font-bold text-lg text-white">1 Workspace / Email</div>
-            <p className="text-[11px] text-neutral-400">Enforced by backend tenant registration gate</p>
+            <span className="text-[10px] uppercase tracking-wider text-neutral-500">Free Trial Limit</span>
+            <div className="font-mono font-bold text-lg text-white">{subConfig.freeCustomerLimit} Clients</div>
+            <p className="text-[11px] text-neutral-400">{subConfig.freeTrialDays} days trial ({subConfig.trialType} mode)</p>
+          </div>
+
+          <div className="p-4 bg-neutral-950/60 border border-neutral-800 rounded-xl space-y-1">
+            <span className="text-[10px] uppercase tracking-wider text-neutral-500">Data Lock On Expiry</span>
+            <div className={`font-mono font-bold text-lg ${subConfig.lockDataWhenExpired ? 'text-red-400' : 'text-emerald-400'}`}>
+              {subConfig.lockDataWhenExpired ? 'Data Locked' : 'Data Visible'}
+            </div>
+            <p className="text-[11px] text-neutral-400">Controlled by platform admin</p>
           </div>
         </div>
       </div>

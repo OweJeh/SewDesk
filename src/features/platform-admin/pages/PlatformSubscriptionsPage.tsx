@@ -33,6 +33,7 @@ import {
   saveSubscriptionConfig,
   setStudioSubscriptionOverride,
   clearStudioSubscriptionOverride,
+  syncSubscriptionConfigWithSupabase,
   type PlatformSubscriptionConfig,
   type StudioOverride,
 } from '@/features/subscriptions/services/subscriptionConfig';
@@ -97,6 +98,10 @@ export const PlatformSubscriptionsPage: React.FC = () => {
   const loadSubscriptions = useCallback(async () => {
     setIsLoading(true);
     try {
+      if (isLive) {
+        await syncSubscriptionConfigWithSupabase().catch(() => {});
+      }
+
       let bizList: Business[] = [];
       let custList: Customer[] = [];
 

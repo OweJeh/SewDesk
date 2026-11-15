@@ -6,6 +6,7 @@ import { generateUUID } from '@/lib/utils';
 import type { Business, BusinessMember, BusinessInvitation, BusinessRole, Subscription } from '@/types';
 import {
   evaluateStudioAccess,
+  syncSubscriptionConfigWithSupabase,
   type StudioAccessState,
 } from '@/features/subscriptions/services/subscriptionConfig';
 
@@ -65,8 +66,11 @@ export const BusinessProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const handleConfigChange = () => setConfigVersion((v) => v + 1);
     window.addEventListener('sewdesk_subscription_config_changed', handleConfigChange);
+    if (isLive) {
+      syncSubscriptionConfigWithSupabase().catch(() => {});
+    }
     return () => window.removeEventListener('sewdesk_subscription_config_changed', handleConfigChange);
-  }, []);
+  }, [isLive]);
 
   const accessState = React.useMemo(() => {
     return evaluateStudioAccess(currentBusiness, currentSubscription);

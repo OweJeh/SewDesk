@@ -1,4 +1,5 @@
 import type { Business, Subscription } from '@/types';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 
 export type TrialType = 'customer_quota' | 'trial_days' | 'both';
 
@@ -34,6 +35,9 @@ export const DEFAULT_SUBSCRIPTION_CONFIG: PlatformSubscriptionConfig = {
   updatedAt: new Date().toISOString(),
 };
 
+/**
+ * Returns the current platform subscription configuration from local cache.
+ */
 export const getSubscriptionConfig = (): PlatformSubscriptionConfig => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -49,6 +53,9 @@ export const getSubscriptionConfig = (): PlatformSubscriptionConfig => {
   }
 };
 
+/**
+ * Saves platform subscription configuration locally and syncs to Supabase.
+ */
 export const saveSubscriptionConfig = (
   config: PlatformSubscriptionConfig
 ): PlatformSubscriptionConfig => {
@@ -61,8 +68,37 @@ export const saveSubscriptionConfig = (
     // Dispatch custom event for real-time reactive sync across open views
     window.dispatchEvent(new CustomEvent('sewdesk_subscription_config_changed', { detail: updated }));
   } catch (err) {
-    console.error('Error saving subscription config:', err);
+    console.error('Error saving subscription config to localStorage:', err);
   }
+
+  // Push to Supabase database if connected
+  if (isSupabaseConfigured()) {
+    (async () => {
+      try {
+        const { error } = await supabase
+          .from('platform_subscription_settings')
+          .upsert(
+            {
+              id: 'global',
+              trial_type: updated.trialType,
+              free_customer_limit: updated.freeCustomerLimit,
+              free_trial_days: updated.freeTrialDays,
+              base_tier_price_ghs: updated.baseTierPriceGHS,
+              pro_tier_price_ghs: updated.proTierPriceGHS,
+              lock_data_when_expired: updated.lockDataWhenExpired,
+              updated_at: updated.updatedAt,
+            },
+            { onConflict: 'id' }
+          );
+        if (error) {
+          console.warn('Could not sync subscription settings to Supabase (table may need migration):', error.message);
+        }
+      } catch (err) {
+        console.warn('Network error syncing subscription settings to Supabase:', err);
+      }
+    })();
+  }
+
   return updated;
 };
 
@@ -76,36 +112,155 @@ export const updateSubscriptionConfig = (
   });
 };
 
+/**
+ * Sets an override for a specific studio workspace and syncs to Supabase.
+ */
 export const setStudioSubscriptionOverride = (
   businessId: string,
   override: Partial<StudioOverride>
 ): PlatformSubscriptionConfig => {
   const current = getSubscriptionConfig();
   const existing = current.studioOverrides[businessId] || {};
+  const mergedOverride = {
+    ...existing,
+    ...override,
+  };
   const updatedOverrides = {
     ...current.studioOverrides,
-    [businessId]: {
-      ...existing,
-      ...override,
-    },
+    [businessId]: mergedOverride,
   };
+
+  // Sync override to Supabase
+  if (isSupabaseConfigured()) {
+    (async () => {
+      try {
+        const { error } = await supabase
+          .from('studio_subscription_overrides')
+          .upsert(
+            {
+              business_id: businessId,
+              custom_customer_limit: mergedOverride.customCustomerLimit ?? null,
+              custom_lock_data: mergedOverride.customLockData ?? null,
+              force_tier: mergedOverride.forceTier ?? null,
+              grace_period_until: mergedOverride.gracePeriodUntil ?? null,
+              notes: mergedOverride.notes ?? null,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: 'business_id' }
+          );
+        if (error) {
+          console.warn('Could not sync studio override to Supabase:', error.message);
+        }
+      } catch (err) {
+        console.warn('Network error syncing studio override to Supabase:', err);
+      }
+    })();
+  }
+
   return saveSubscriptionConfig({
     ...current,
     studioOverrides: updatedOverrides,
   });
 };
 
+/**
+ * Clears an override for a specific studio workspace and syncs to Supabase.
+ */
 export const clearStudioSubscriptionOverride = (
   businessId: string
 ): PlatformSubscriptionConfig => {
   const current = getSubscriptionConfig();
   const updatedOverrides = { ...current.studioOverrides };
   delete updatedOverrides[businessId];
+
+  // Sync deletion to Supabase
+  if (isSupabaseConfigured()) {
+    (async () => {
+      try {
+        const { error } = await supabase
+          .from('studio_subscription_overrides')
+          .delete()
+          .eq('business_id', businessId);
+        if (error) {
+          console.warn('Could not delete studio override from Supabase:', error.message);
+        }
+      } catch (err) {
+        console.warn('Network error deleting studio override from Supabase:', err);
+      }
+    })();
+  }
+
   return saveSubscriptionConfig({
     ...current,
     studioOverrides: updatedOverrides,
   });
 };
+
+/**
+ * Fetches subscription settings and studio overrides from Supabase and hydrates local storage.
+ */
+export const syncSubscriptionConfigWithSupabase = async (): Promise<PlatformSubscriptionConfig> => {
+  if (!isSupabaseConfigured()) {
+    return getSubscriptionConfig();
+  }
+
+  try {
+    // 1. Fetch global platform settings
+    const { data: settingsData, error: settingsErr } = await supabase
+      .from('platform_subscription_settings')
+      .select('*')
+      .eq('id', 'global')
+      .maybeSingle();
+
+    // 2. Fetch studio overrides
+    const { data: overridesData, error: overridesErr } = await supabase
+      .from('studio_subscription_overrides')
+      .select('*');
+
+    const current = getSubscriptionConfig();
+    let updated = { ...current };
+
+    if (!settingsErr && settingsData) {
+      updated = {
+        ...updated,
+        trialType: (settingsData.trial_type as TrialType) || updated.trialType,
+        freeCustomerLimit: settingsData.free_customer_limit ?? updated.freeCustomerLimit,
+        freeTrialDays: settingsData.free_trial_days ?? updated.freeTrialDays,
+        baseTierPriceGHS: Number(settingsData.base_tier_price_ghs ?? updated.baseTierPriceGHS),
+        proTierPriceGHS: Number(settingsData.pro_tier_price_ghs ?? updated.proTierPriceGHS),
+        lockDataWhenExpired: settingsData.lock_data_when_expired ?? updated.lockDataWhenExpired,
+        updatedAt: settingsData.updated_at || updated.updatedAt,
+      };
+    }
+
+    if (!overridesErr && overridesData && Array.isArray(overridesData)) {
+      const overridesMap: Record<string, StudioOverride> = {};
+      overridesData.forEach((row: any) => {
+        overridesMap[row.business_id] = {
+          customCustomerLimit: row.custom_customer_limit ?? undefined,
+          customLockData: row.custom_lock_data ?? undefined,
+          forceTier: row.force_tier ?? undefined,
+          gracePeriodUntil: row.grace_period_until ?? undefined,
+          notes: row.notes ?? undefined,
+        };
+      });
+      updated.studioOverrides = overridesMap;
+    }
+
+    // Update local cache & dispatch reactive event
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('sewdesk_subscription_config_changed', { detail: updated }));
+    return updated;
+  } catch (err) {
+    console.warn('Failed to sync subscription config with Supabase:', err);
+    return getSubscriptionConfig();
+  }
+};
+
+// Initial background sync on module load if connected
+if (typeof window !== 'undefined' && isSupabaseConfigured()) {
+  syncSubscriptionConfigWithSupabase().catch(() => {});
+}
 
 export interface StudioAccessState {
   tier: 'free_trial' | 'base' | 'pro' | 'expired';
@@ -187,6 +342,11 @@ export const evaluateStudioAccess = (
       isTrialEnded = isQuotaExhausted || isDaysExhausted;
     }
 
+    // Grace period check: if admin granted grace period in the future, don't mark as expired
+    if (override.gracePeriodUntil && new Date(override.gracePeriodUntil).getTime() > Date.now()) {
+      isTrialEnded = false;
+    }
+
     if (isTrialEnded) {
       tier = 'expired';
     } else {
@@ -238,4 +398,3 @@ export const evaluateStudioAccess = (
     trialType: config.trialType,
   };
 };
-
