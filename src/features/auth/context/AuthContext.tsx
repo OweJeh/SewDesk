@@ -30,6 +30,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const LOCAL_STORAGE_USER_KEY = 'sewdesk_active_user';
 const LOCAL_STORAGE_IS_ADMIN_KEY = 'sewdesk_is_platform_admin';
 
+/** Hard-locked platform admin email — only this address can access /platform/* */
+const PLATFORM_ADMIN_EMAIL = 'owusujunior2004@gmail.com';
+
+const checkIsPlatformAdmin = (email?: string | null): boolean =>
+  Boolean(email && email.toLowerCase() === PLATFORM_ADMIN_EMAIL.toLowerCase());
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -51,22 +57,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setProfile(data as Profile);
           await db.profiles.put(data as Profile);
           localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(data));
-          // Check platform admin status
-          const { data: adminData } = await supabase
-            .from('platform_admins')
-            .select('id')
-            .eq('profile_id', userId)
-            .maybeSingle();
-
-          setIsPlatformAdmin(Boolean(adminData));
+          // Hard-locked: only owusujunior2004@gmail.com is a platform admin
+          setIsPlatformAdmin(checkIsPlatformAdmin((data as Profile).email));
           return;
         }
       }
 
       // Check Dexie / Local fallback
       const localProfile = await db.profiles.get(userId);
+      let resolvedEmail = emailStr;
       if (localProfile) {
         setProfile(localProfile);
+        resolvedEmail = localProfile.email;
       } else if (emailStr) {
         const fallbackProfile: Profile = {
           id: userId,
@@ -77,10 +79,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         await db.profiles.put(fallbackProfile);
         setProfile(fallbackProfile);
+        resolvedEmail = emailStr;
       }
 
-      const storedAdmin = localStorage.getItem(LOCAL_STORAGE_IS_ADMIN_KEY);
-      setIsPlatformAdmin(storedAdmin === 'true');
+      setIsPlatformAdmin(checkIsPlatformAdmin(resolvedEmail));
     } catch (err) {
       console.warn('Error loading user profile:', err);
     }
@@ -112,8 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               } as User;
               setUser(mockUser);
               setProfile(parsed);
-              const storedAdmin = localStorage.getItem(LOCAL_STORAGE_IS_ADMIN_KEY);
-              setIsPlatformAdmin(storedAdmin === 'true');
+              setIsPlatformAdmin(checkIsPlatformAdmin(parsed.email));
             } catch {
               localStorage.removeItem(LOCAL_STORAGE_USER_KEY);
             }
@@ -182,6 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(mockUser);
       setProfile(existingProfile);
       localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(existingProfile));
+      setIsPlatformAdmin(checkIsPlatformAdmin(existingProfile.email));
       return { error: null };
     } catch (err) {
       return { error: err as Error };
@@ -251,6 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(mockUser);
       setProfile(newProfile);
       localStorage.setItem(LOCAL_STORAGE_USER_KEY, JSON.stringify(newProfile));
+      setIsPlatformAdmin(checkIsPlatformAdmin(newProfile.email));
       return { error: null };
     } catch (err) {
       return { error: err as Error };
@@ -382,6 +385,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setDemoPlatformAdmin = (isAdmin: boolean) => {
+    // Platform admin is strictly tied to owusujunior2004@gmail.com
+    const activeEmail = profile?.email || user?.email;
+    if (isAdmin && !checkIsPlatformAdmin(activeEmail)) {
+      console.warn('Platform Admin is restricted exclusively to owusujunior2004@gmail.com');
+      setIsPlatformAdmin(false);
+      localStorage.removeItem(LOCAL_STORAGE_IS_ADMIN_KEY);
+      return;
+    }
     setIsPlatformAdmin(isAdmin);
     localStorage.setItem(LOCAL_STORAGE_IS_ADMIN_KEY, isAdmin ? 'true' : 'false');
   };
