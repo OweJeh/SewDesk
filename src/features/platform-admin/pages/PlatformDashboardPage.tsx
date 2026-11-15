@@ -36,7 +36,7 @@ export const PlatformDashboardPage: React.FC = () => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [measurementCount, setMeasurementCount] = useState(0);
   const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date());
-  const [activeTab, setActiveTab] = useState<'orders' | 'users' | 'studios'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'orders' | 'studios'>('users');
 
   const isLive = isSupabaseConfigured();
 
@@ -184,10 +184,10 @@ export const PlatformDashboardPage: React.FC = () => {
             size="sm"
             onClick={loadPlatformData}
             disabled={isLoading}
-            className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 text-xs gap-1.5"
+            className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 shadow-sm"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-            <span>Refresh All</span>
+            <RefreshCw className={`w-3.5 h-3.5 text-black ${isLoading ? 'animate-spin' : ''}`} />
+            <span className="text-black font-semibold">Refresh All</span>
           </Button>
         </div>
       </div>
@@ -195,7 +195,7 @@ export const PlatformDashboardPage: React.FC = () => {
       {/* Primary KPI Cards Grid (5 Responsive Metrics) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5 sm:gap-4">
         {/* Total Active Users (Supabase Auth / Profiles) */}
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl hover:border-neutral-700 transition-colors">
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-xl hover:border-neutral-700 transition-colors">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
               Active Users
@@ -208,13 +208,13 @@ export const PlatformDashboardPage: React.FC = () => {
             {profiles.length}
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500 pt-2 border-t border-neutral-800/80">
-            <span>Verified tailor & staff accounts</span>
+            <span>Verified accounts</span>
             <span className="font-mono text-emerald-400 text-[10px]">LIVE AUTH</span>
           </div>
         </div>
 
         {/* Total Studios */}
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl hover:border-neutral-700 transition-colors">
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-xl hover:border-neutral-700 transition-colors">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
               Studio Tenants
@@ -228,7 +228,7 @@ export const PlatformDashboardPage: React.FC = () => {
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500 pt-2 border-t border-neutral-800/80">
             <span>{proStudios.length} Pro / {businesses.length - proStudios.length} Free</span>
-            <Link to="/platform/businesses" className="text-neutral-400 hover:text-white flex items-center gap-0.5">
+            <Link to="/platform/businesses" className="text-neutral-400 hover:text-white flex items-center gap-0.5 font-medium">
               <span>View</span>
               <ArrowUpRight className="w-3 h-3" />
             </Link>
@@ -236,7 +236,7 @@ export const PlatformDashboardPage: React.FC = () => {
         </div>
 
         {/* Total Customers */}
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl hover:border-neutral-700 transition-colors">
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-xl hover:border-neutral-700 transition-colors">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
               Tailoring Clients
@@ -249,15 +249,15 @@ export const PlatformDashboardPage: React.FC = () => {
             {customers.length}
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500 pt-2 border-t border-neutral-800/80">
-            <span>Across all tenant studios</span>
+            <span>Across all studios</span>
             <span className="font-mono text-neutral-400">
-              {businesses.length ? (customers.length / businesses.length).toFixed(1) : 0} avg/studio
+              {businesses.length ? (customers.length / businesses.length).toFixed(1) : 0} avg
             </span>
           </div>
         </div>
 
         {/* Total Orders */}
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl hover:border-neutral-700 transition-colors">
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-xl hover:border-neutral-700 transition-colors">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
               Platform Orders
@@ -276,7 +276,7 @@ export const PlatformDashboardPage: React.FC = () => {
         </div>
 
         {/* Gross Order Volume */}
-        <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl hover:border-neutral-700 transition-colors">
+        <div className="bg-neutral-900 border border-neutral-800 p-4 sm:p-5 rounded-xl hover:border-neutral-700 transition-colors">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
               Gross Platform GMV
@@ -290,7 +290,7 @@ export const PlatformDashboardPage: React.FC = () => {
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-neutral-500 pt-2 border-t border-neutral-800/80">
             <span>Collected: {formatCurrency(totalCollected, 'GHS')}</span>
-            <Link to="/platform/transactions" className="text-neutral-400 hover:text-white flex items-center gap-0.5">
+            <Link to="/platform/transactions" className="text-neutral-400 hover:text-white flex items-center gap-0.5 font-medium">
               <span>Audit</span>
               <ArrowUpRight className="w-3 h-3" />
             </Link>
@@ -330,7 +330,7 @@ export const PlatformDashboardPage: React.FC = () => {
       <div className="bg-neutral-900 border border-neutral-800 rounded-2xl overflow-hidden flex flex-col">
         {/* Tab Headers */}
         <div className="p-3 sm:p-4 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setActiveTab('users')}
               className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
@@ -340,7 +340,7 @@ export const PlatformDashboardPage: React.FC = () => {
               }`}
             >
               <UserCheck className="w-3.5 h-3.5 text-blue-400" />
-              <span>Active Tailor Accounts ({profiles.length})</span>
+              <span>Tailor Accounts ({profiles.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('orders')}
@@ -377,54 +377,36 @@ export const PlatformDashboardPage: React.FC = () => {
 
         {/* Tab Content: Users Directory */}
         {activeTab === 'users' && (
-          <div className="overflow-x-auto flex-1">
+          <div className="flex-1">
             {profiles.length === 0 ? (
               <div className="p-8 text-center text-xs text-neutral-500 space-y-2">
                 <UserCheck className="w-8 h-8 mx-auto text-neutral-700" />
                 <p>No user accounts loaded.</p>
               </div>
             ) : (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-neutral-950/60 border-b border-neutral-800 text-[10px] uppercase font-mono tracking-wider text-neutral-400">
-                  <tr>
-                    <th className="py-3 px-4">User / Tailor</th>
-                    <th className="py-3 px-4">Contact Email</th>
-                    <th className="py-3 px-4">Assigned Workspace</th>
-                    <th className="py-3 px-4 text-center">Platform Role</th>
-                    <th className="py-3 px-4 text-right">Joined</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-800/60 font-sans">
+              <>
+                {/* Mobile Cards View (< md) */}
+                <div className="md:hidden divide-y divide-neutral-800/80">
                   {profiles.map((p) => {
                     const ownedBiz = ownerBizMap.get(p.id);
-                    const isHardLockedAdmin = p.email.toLowerCase() === 'owusujunior2004@gmail.com';
+                    const isRoot = p.email.toLowerCase() === 'owusujunior2004@gmail.com';
                     return (
-                      <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors">
-                        <td className="py-3 px-4">
-                          <div className="font-semibold text-white flex items-center gap-2">
-                            <span>{p.full_name || p.email.split('@')[0]}</span>
-                            {isHardLockedAdmin && (
-                              <Badge variant="default" className="bg-red-600 text-white text-[9px] font-mono px-1 py-0">
-                                ROOT OPS
-                              </Badge>
-                            )}
+                      <div key={p.id} className="p-4 space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="font-semibold text-white text-xs flex items-center gap-1.5">
+                              <span>{p.full_name || p.email.split('@')[0]}</span>
+                              {isRoot && (
+                                <Badge variant="default" className="bg-red-600 text-white text-[9px] font-mono px-1 py-0">
+                                  ROOT
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-[11px] font-mono text-neutral-400 mt-0.5">
+                              {p.email}
+                            </div>
                           </div>
-                          <div className="text-[10px] font-mono text-neutral-500 truncate max-w-[160px]">
-                            {p.id}
-                          </div>
-                        </td>
-                        <td className="py-3 px-4 text-neutral-300 font-mono text-[11px]">
-                          {p.email}
-                        </td>
-                        <td className="py-3 px-4 text-neutral-300">
-                          {ownedBiz ? (
-                            <span className="font-medium text-white">{ownedBiz.business_name}</span>
-                          ) : (
-                            <span className="text-neutral-500 italic">Workspace Active / Staff</span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {isHardLockedAdmin ? (
+                          {isRoot ? (
                             <Badge variant="default" className="bg-red-950 text-red-400 border border-red-800 text-[9px] font-mono">
                               PLATFORM ADMIN
                             </Badge>
@@ -434,71 +416,166 @@ export const PlatformDashboardPage: React.FC = () => {
                             </Badge>
                           ) : (
                             <Badge variant="outline" className="border-neutral-800 text-neutral-400 text-[9px]">
-                              STAFF TAILOR
+                              STAFF
                             </Badge>
                           )}
-                        </td>
-                        <td className="py-3 px-4 text-right text-neutral-400 font-mono text-[11px]">
-                          {formatDate(p.created_at)}
-                        </td>
-                      </tr>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1 border-t border-neutral-900">
+                          <span>{ownedBiz ? ownedBiz.business_name : 'Staff / Workspace Member'}</span>
+                          <span>{formatDate(p.created_at)}</span>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+
+                {/* Desktop Table (md+) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-neutral-950/60 border-b border-neutral-800 text-[10px] uppercase font-mono tracking-wider text-neutral-400">
+                      <tr>
+                        <th className="py-3 px-4">User / Tailor</th>
+                        <th className="py-3 px-4">Contact Email</th>
+                        <th className="py-3 px-4">Assigned Workspace</th>
+                        <th className="py-3 px-4 text-center">Platform Role</th>
+                        <th className="py-3 px-4 text-right">Joined</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/60 font-sans">
+                      {profiles.map((p) => {
+                        const ownedBiz = ownerBizMap.get(p.id);
+                        const isHardLockedAdmin = p.email.toLowerCase() === 'owusujunior2004@gmail.com';
+                        return (
+                          <tr key={p.id} className="hover:bg-neutral-800/40 transition-colors">
+                            <td className="py-3 px-4">
+                              <div className="font-semibold text-white flex items-center gap-2">
+                                <span>{p.full_name || p.email.split('@')[0]}</span>
+                                {isHardLockedAdmin && (
+                                  <Badge variant="default" className="bg-red-600 text-white text-[9px] font-mono px-1 py-0">
+                                    ROOT OPS
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-[10px] font-mono text-neutral-500 truncate max-w-[160px]">
+                                {p.id}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-neutral-300 font-mono text-[11px]">
+                              {p.email}
+                            </td>
+                            <td className="py-3 px-4 text-neutral-300">
+                              {ownedBiz ? (
+                                <span className="font-medium text-white">{ownedBiz.business_name}</span>
+                              ) : (
+                                <span className="text-neutral-500 italic">Workspace Active / Staff</span>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {isHardLockedAdmin ? (
+                                <Badge variant="default" className="bg-red-950 text-red-400 border border-red-800 text-[9px] font-mono">
+                                  PLATFORM ADMIN
+                                </Badge>
+                              ) : ownedBiz ? (
+                                <Badge variant="outline" className="border-neutral-700 text-neutral-300 text-[9px]">
+                                  STUDIO OWNER
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="border-neutral-800 text-neutral-400 text-[9px]">
+                                  STAFF TAILOR
+                                </Badge>
+                              )}
+                            </td>
+                            <td className="py-3 px-4 text-right text-neutral-400 font-mono text-[11px]">
+                              {formatDate(p.created_at)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}
 
         {/* Tab Content: Orders */}
         {activeTab === 'orders' && (
-          <div className="overflow-x-auto flex-1">
+          <div className="flex-1">
             {orders.length === 0 ? (
               <div className="p-8 text-center text-xs text-neutral-500 space-y-2">
                 <ShoppingBag className="w-8 h-8 mx-auto text-neutral-700" />
                 <p>No orders recorded across the platform yet.</p>
               </div>
             ) : (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-neutral-950/60 border-b border-neutral-800 text-[10px] uppercase font-mono tracking-wider text-neutral-400">
-                  <tr>
-                    <th className="py-3 px-4">Order #</th>
-                    <th className="py-3 px-4">Studio</th>
-                    <th className="py-3 px-4">Client</th>
-                    <th className="py-3 px-4">Garment</th>
-                    <th className="py-3 px-4 text-right">Total</th>
-                    <th className="py-3 px-4 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-800/60 font-sans">
-                  {orders.slice(0, 10).map((ord) => {
+              <>
+                {/* Mobile Cards View (< md) */}
+                <div className="md:hidden divide-y divide-neutral-800/80">
+                  {orders.slice(0, 8).map((ord) => {
                     const studioName = businessMap.get(ord.business_id) || 'Studio';
                     const clientName = customerMap.get(ord.customer_id) || ord.customer?.full_name || 'Client';
                     return (
-                      <tr key={ord.id} className="hover:bg-neutral-800/40 transition-colors">
-                        <td className="py-3 px-4 font-mono font-medium text-white">
-                          {ord.order_number}
-                        </td>
-                        <td className="py-3 px-4 text-neutral-300 max-w-[130px] truncate">
-                          {studioName}
-                        </td>
-                        <td className="py-3 px-4 text-neutral-300 max-w-[130px] truncate">
-                          {clientName}
-                        </td>
-                        <td className="py-3 px-4 text-neutral-400 truncate">
-                          {ord.garment_type}
-                        </td>
-                        <td className="py-3 px-4 font-mono font-medium text-right text-white">
-                          {formatCurrency(ord.total_price, ord.currency || 'GHS')}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          {getStatusBadge(ord.status)}
-                        </td>
-                      </tr>
+                      <div key={ord.id} className="p-4 space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <span className="font-mono font-bold text-white text-xs">{ord.order_number}</span>
+                            <div className="text-[11px] text-neutral-400">{ord.garment_type}</div>
+                          </div>
+                          <div>{getStatusBadge(ord.status)}</div>
+                        </div>
+                        <div className="flex items-center justify-between text-xs pt-1">
+                          <span className="text-neutral-400 truncate max-w-[150px]">{studioName} &bull; {clientName}</span>
+                          <span className="font-mono font-bold text-emerald-400">{formatCurrency(ord.total_price, ord.currency || 'GHS')}</span>
+                        </div>
+                      </div>
                     );
                   })}
-                </tbody>
-              </table>
+                </div>
+
+                {/* Desktop Table (md+) */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-neutral-950/60 border-b border-neutral-800 text-[10px] uppercase font-mono tracking-wider text-neutral-400">
+                      <tr>
+                        <th className="py-3 px-4">Order #</th>
+                        <th className="py-3 px-4">Studio</th>
+                        <th className="py-3 px-4">Client</th>
+                        <th className="py-3 px-4">Garment</th>
+                        <th className="py-3 px-4 text-right">Total</th>
+                        <th className="py-3 px-4 text-center">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-800/60 font-sans">
+                      {orders.slice(0, 10).map((ord) => {
+                        const studioName = businessMap.get(ord.business_id) || 'Studio';
+                        const clientName = customerMap.get(ord.customer_id) || ord.customer?.full_name || 'Client';
+                        return (
+                          <tr key={ord.id} className="hover:bg-neutral-800/40 transition-colors">
+                            <td className="py-3 px-4 font-mono font-medium text-white">
+                              {ord.order_number}
+                            </td>
+                            <td className="py-3 px-4 text-neutral-300 max-w-[130px] truncate">
+                              {studioName}
+                            </td>
+                            <td className="py-3 px-4 text-neutral-300 max-w-[130px] truncate">
+                              {clientName}
+                            </td>
+                            <td className="py-3 px-4 text-neutral-400 truncate">
+                              {ord.garment_type}
+                            </td>
+                            <td className="py-3 px-4 font-mono font-medium text-right text-white">
+                              {formatCurrency(ord.total_price, ord.currency || 'GHS')}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {getStatusBadge(ord.status)}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </div>
         )}

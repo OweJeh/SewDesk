@@ -226,17 +226,17 @@ export const PlatformAuditLogsPage: React.FC = () => {
             size="sm"
             onClick={handleExportJSON}
             disabled={events.length === 0}
-            className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 text-xs gap-1.5"
+            className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 shadow-sm"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export JSON</span>
+            <Download className="w-3.5 h-3.5 text-black" />
+            <span className="text-black font-semibold">Export JSON</span>
           </Button>
           <Button
             variant="outline"
             size="sm"
             onClick={loadAuditTrail}
             disabled={isLoading}
-            className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 text-xs gap-1.5"
+            className="bg-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-700 border border-neutral-700 text-xs gap-1.5"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             <span>Refresh</span>

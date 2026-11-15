@@ -18,6 +18,7 @@ import {
   ShoppingBag,
   ExternalLink,
   Receipt,
+  X,
 } from 'lucide-react';
 
 interface UnifiedTransaction {
@@ -85,7 +86,6 @@ export const PlatformTransactionsPage: React.FC = () => {
 
       const unified: UnifiedTransaction[] = [];
 
-      // 1. Add explicitly recorded payment entries
       paymentsData.forEach((p) => {
         const ord = orderMap.get(p.order_id);
         unified.push({
@@ -102,7 +102,6 @@ export const PlatformTransactionsPage: React.FC = () => {
         });
       });
 
-      // 2. If payments table has few records but orders have deposits/payments recorded, synthesize them
       if (paymentsData.length === 0) {
         ordersData
           .filter((o) => (o.amount_paid || 0) > 0)
@@ -135,7 +134,6 @@ export const PlatformTransactionsPage: React.FC = () => {
     loadTransactions();
   }, [loadTransactions]);
 
-  // Aggregates
   const totalVolume = transactions.reduce((sum, t) => sum + t.amount, 0);
   const momoTxns = transactions.filter((t) => t.method === 'mobile_money');
   const cashTxns = transactions.filter((t) => t.method === 'cash');
@@ -210,10 +208,10 @@ export const PlatformTransactionsPage: React.FC = () => {
           size="sm"
           onClick={loadTransactions}
           disabled={isLoading}
-          className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 text-xs gap-1.5 self-start sm:self-auto"
+          className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 self-start sm:self-auto shadow-sm"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <RefreshCw className={`w-3.5 h-3.5 text-black ${isLoading ? 'animate-spin' : ''}`} />
+          <span className="text-black font-semibold">Refresh</span>
         </Button>
       </div>
 
@@ -280,6 +278,14 @@ export const PlatformTransactionsPage: React.FC = () => {
             placeholder="Search transactions by order, studio, client, or reference..."
             className="pl-9 bg-neutral-900 border-neutral-800 text-white placeholder:text-neutral-500 text-xs h-10 rounded-xl"
           />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-1.5 bg-neutral-900 border border-neutral-800 p-1 rounded-xl">
@@ -326,54 +332,81 @@ export const PlatformTransactionsPage: React.FC = () => {
             <p>No transaction records matching filter criteria.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-neutral-950/80 border-b border-neutral-800 text-[10px] uppercase font-mono tracking-wider text-neutral-400">
-                <tr>
-                  <th className="py-3.5 px-4">Reference</th>
-                  <th className="py-3.5 px-4">Order #</th>
-                  <th className="py-3.5 px-4">Studio</th>
-                  <th className="py-3.5 px-4">Client</th>
-                  <th className="py-3.5 px-4">Method</th>
-                  <th className="py-3.5 px-4 text-right">Amount</th>
-                  <th className="py-3.5 px-4 text-right">Date & Time</th>
-                  <th className="py-3.5 px-4 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-800/60 font-sans">
-                {filtered.map((t) => (
-                  <tr key={t.id} className="hover:bg-neutral-800/40 transition-colors">
-                    <td className="py-3.5 px-4 font-mono text-neutral-400 text-[11px]">
-                      {t.reference}
-                    </td>
-                    <td className="py-3.5 px-4 font-mono font-medium text-white">
-                      {t.orderNumber}
-                    </td>
-                    <td className="py-3.5 px-4 text-neutral-200 font-medium max-w-[140px] truncate">
-                      {t.studioName}
-                    </td>
-                    <td className="py-3.5 px-4 text-neutral-300 max-w-[140px] truncate">
-                      {t.customerName}
-                    </td>
-                    <td className="py-3.5 px-4">
-                      {getMethodBadge(t.method)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right font-mono font-medium text-emerald-400">
+          <>
+            {/* Mobile Card View (< md) */}
+            <div className="md:hidden divide-y divide-neutral-800/80">
+              {filtered.map((t) => (
+                <div key={t.id} className="p-4 space-y-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <span className="font-mono font-bold text-white text-xs">{t.orderNumber}</span>
+                      <div className="text-[11px] text-neutral-400 mt-0.5">{t.studioName} &bull; {t.customerName}</div>
+                    </div>
+                    <span className="font-mono font-bold text-emerald-400 text-sm">
                       {formatCurrency(t.amount, t.currency)}
-                    </td>
-                    <td className="py-3.5 px-4 text-right text-neutral-400 font-mono text-[11px]">
-                      {formatDate(t.date)}
-                    </td>
-                    <td className="py-3.5 px-4 text-center">
-                      <Badge variant="default" className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px]">
-                        {t.status}
-                      </Badge>
-                    </td>
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-1 border-t border-neutral-900">
+                    <div className="flex items-center gap-1.5">
+                      {getMethodBadge(t.method)}
+                      <span className="font-mono text-[10px] text-neutral-500">{t.reference}</span>
+                    </div>
+                    <span>{formatDate(t.date)}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table (md+) */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-neutral-950/80 border-b border-neutral-800 text-[10px] uppercase font-mono tracking-wider text-neutral-400">
+                  <tr>
+                    <th className="py-3.5 px-4">Reference</th>
+                    <th className="py-3.5 px-4">Order #</th>
+                    <th className="py-3.5 px-4">Studio</th>
+                    <th className="py-3.5 px-4">Client</th>
+                    <th className="py-3.5 px-4">Method</th>
+                    <th className="py-3.5 px-4 text-right">Amount</th>
+                    <th className="py-3.5 px-4 text-right">Date & Time</th>
+                    <th className="py-3.5 px-4 text-center">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-neutral-800/60 font-sans">
+                  {filtered.map((t) => (
+                    <tr key={t.id} className="hover:bg-neutral-800/40 transition-colors">
+                      <td className="py-3.5 px-4 font-mono text-neutral-400 text-[11px]">
+                        {t.reference}
+                      </td>
+                      <td className="py-3.5 px-4 font-mono font-medium text-white">
+                        {t.orderNumber}
+                      </td>
+                      <td className="py-3.5 px-4 text-neutral-200 font-medium max-w-[140px] truncate">
+                        {t.studioName}
+                      </td>
+                      <td className="py-3.5 px-4 text-neutral-300 max-w-[140px] truncate">
+                        {t.customerName}
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {getMethodBadge(t.method)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right font-mono font-medium text-emerald-400">
+                        {formatCurrency(t.amount, t.currency)}
+                      </td>
+                      <td className="py-3.5 px-4 text-right text-neutral-400 font-mono text-[11px]">
+                        {formatDate(t.date)}
+                      </td>
+                      <td className="py-3.5 px-4 text-center">
+                        <Badge variant="default" className="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[9px]">
+                          {t.status}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
       </div>
     </div>

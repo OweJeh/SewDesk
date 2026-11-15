@@ -8,7 +8,6 @@ import { Input } from '@/components/ui/input';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import {
   Sliders,
-  Sparkles,
   CreditCard,
   Building2,
   Users,
@@ -158,10 +157,10 @@ export const PlatformSubscriptionsPage: React.FC = () => {
           size="sm"
           onClick={loadSubscriptions}
           disabled={isLoading}
-          className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 text-xs gap-1.5 self-start sm:self-auto"
+          className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 self-start sm:self-auto shadow-sm"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <RefreshCw className={`w-3.5 h-3.5 text-black ${isLoading ? 'animate-spin' : ''}`} />
+          <span className="text-black font-semibold">Refresh</span>
         </Button>
       </div>
 
@@ -181,7 +180,7 @@ export const PlatformSubscriptionsPage: React.FC = () => {
         <div className="bg-neutral-900 border border-neutral-800 p-5 rounded-xl">
           <div className="flex items-center justify-between text-neutral-400">
             <span className="text-xs font-semibold uppercase tracking-wider">Active Pro Studios</span>
-            <Sparkles className="w-4 h-4 text-amber-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
           </div>
           <div className="mt-2 text-2xl sm:text-3xl font-mono font-bold text-white">
             {proCount}
@@ -327,12 +326,12 @@ export const PlatformSubscriptionsPage: React.FC = () => {
                       size="sm"
                       disabled={isWorking}
                       onClick={() => handleToggleSubscription(s)}
-                      className={`text-xs h-8 px-3 border-neutral-700 hover:bg-neutral-800 ${
-                        s.isPro ? 'text-amber-400' : 'text-emerald-400'
-                      }`}
+                      className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs h-8 px-3 shadow-sm"
                     >
-                      <Zap className="w-3.5 h-3.5 mr-1.5" />
-                      {isWorking ? 'Updating...' : s.isPro ? 'Downgrade to Free' : 'Grant Pro Upgrade'}
+                      <Zap className="w-3.5 h-3.5 mr-1.5 text-black" />
+                      <span className="text-black font-semibold">
+                        {isWorking ? 'Updating...' : s.isPro ? 'Downgrade to Free' : 'Grant Pro Upgrade'}
+                      </span>
                     </Button>
                   </div>
                 </div>

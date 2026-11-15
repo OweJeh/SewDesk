@@ -21,7 +21,7 @@ import {
   ExternalLink,
   ChevronRight,
   X,
-  Sparkles,
+  Sliders,
   ShieldAlert,
   ArrowUpDown,
   RefreshCw,
@@ -229,10 +229,10 @@ export const PlatformBusinessesPage: React.FC = () => {
           size="sm"
           onClick={fetchBusinesses}
           disabled={isLoading}
-          className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 text-xs gap-1.5 self-start sm:self-auto"
+          className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 self-start sm:self-auto shadow-sm"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
-          <span>Refresh</span>
+          <RefreshCw className={`w-3.5 h-3.5 text-black ${isLoading ? 'animate-spin' : ''}`} />
+          <span className="text-black font-semibold">Refresh</span>
         </Button>
       </div>
 
@@ -467,10 +467,10 @@ export const PlatformBusinessesPage: React.FC = () => {
                           </td>
                           <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
                               onClick={() => setSelectedBusiness(b)}
-                              className="text-xs text-neutral-400 hover:text-white hover:bg-neutral-800 h-8 px-2"
+                              className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs h-8 px-2.5 shadow-sm"
                             >
                               Inspect
                             </Button>
@@ -678,10 +678,10 @@ export const PlatformBusinessesPage: React.FC = () => {
                   size="sm"
                   disabled={isUpdatingSub}
                   onClick={() => handleTogglePro(selectedBusiness)}
-                  className="border-neutral-700 text-white hover:bg-neutral-800 text-xs flex-1 gap-1.5"
+                  className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs flex-1 gap-1.5 shadow-sm"
                 >
-                  <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>
+                  <Sliders className="w-3.5 h-3.5 text-black" />
+                  <span className="text-black font-semibold">
                     {selectedBusiness.actualCustomerCount > 100
                       ? 'Revoke Pro Subscription'
                       : 'Grant Pro Subscription'}
@@ -691,7 +691,7 @@ export const PlatformBusinessesPage: React.FC = () => {
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedBusiness(null)}
-                  className="border-neutral-800 text-neutral-400 hover:text-white text-xs"
+                  className="bg-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-700 border border-neutral-700 text-xs"
                 >
                   Close
                 </Button>

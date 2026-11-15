@@ -350,10 +350,10 @@ USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', ''))
           variant="outline"
           size="sm"
           onClick={loadTelemetry}
-          className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 text-xs gap-1.5 self-start sm:self-auto"
+          className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 self-start sm:self-auto shadow-sm"
         >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Refresh Telemetry</span>
+          <RefreshCw className="w-3.5 h-3.5 text-black" />
+          <span className="text-black font-semibold">Refresh Telemetry</span>
         </Button>
       </div>
 
@@ -463,10 +463,10 @@ USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', ''))
             variant="outline"
             size="sm"
             onClick={handleCopySql}
-            className="border-neutral-700 text-xs gap-1.5 h-8 text-white hover:bg-neutral-800"
+            className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 h-8 shadow-sm"
           >
-            {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copiedSql ? 'Copied to Clipboard!' : 'Copy SQL Sync Query'}</span>
+            {copiedSql ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-black" />}
+            <span className="text-black font-semibold">{copiedSql ? 'Copied to Clipboard!' : 'Copy SQL Sync Query'}</span>
           </Button>
         </div>
         <p className="text-xs text-neutral-400 leading-relaxed">
@@ -518,10 +518,10 @@ USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', ''))
             variant="outline"
             size="sm"
             onClick={handleFullBackup}
-            className="border-neutral-700 text-white hover:bg-neutral-800 text-xs gap-1.5"
+            className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs gap-1.5 shadow-sm"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>Export Full Platform Backup (JSON)</span>
+            <Download className="w-3.5 h-3.5 text-black" />
+            <span className="text-black font-semibold">Export Full Platform Backup (JSON)</span>
           </Button>
 
           <Button
@@ -529,9 +529,9 @@ USING (public.is_platform_admin() OR LOWER(COALESCE(auth.jwt() ->> 'email', ''))
             size="sm"
             disabled={isSeeding}
             onClick={handleSeedDemoData}
-            className="border-neutral-700 text-amber-400 hover:bg-neutral-800 text-xs gap-1.5"
+            className="bg-neutral-800 text-neutral-200 hover:text-white hover:bg-neutral-700 border border-neutral-700 text-xs gap-1.5"
           >
-            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <Database className="w-3.5 h-3.5" />
             <span>{isSeeding ? 'Seeding...' : 'Seed Sample Studio Data'}</span>
           </Button>
         </div>

@@ -82,15 +82,15 @@ export const PlatformLayout: React.FC = () => {
           <div className="flex flex-col sm:flex-row gap-2.5 justify-center pt-2">
             <Button
               variant="outline"
-              className="border-neutral-700 text-white hover:bg-neutral-800 text-xs w-full sm:w-auto"
+              className="bg-white text-black font-semibold hover:bg-neutral-100 border border-neutral-300 text-xs w-full sm:w-auto shadow-sm"
               onClick={() => navigate('/app/dashboard')}
             >
-              <ArrowLeft className="w-3.5 h-3.5 mr-1.5" />
+              <ArrowLeft className="w-3.5 h-3.5 mr-1.5 text-black" />
               Return to Workspace
             </Button>
             <Button
               variant="primary"
-              className="bg-red-600 hover:bg-red-700 text-white text-xs w-full sm:w-auto"
+              className="bg-red-600 hover:bg-red-700 text-white text-xs w-full sm:w-auto font-semibold shadow-sm"
               disabled={isSwitching}
               onClick={handleAdminSwitch}
             >
