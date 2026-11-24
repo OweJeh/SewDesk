@@ -25,6 +25,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { getSubscriptionConfig } from '@/features/subscriptions/services/subscriptionConfig';
 
 export const PlatformDashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
@@ -122,7 +123,11 @@ export const PlatformDashboardPage: React.FC = () => {
   const totalOutstanding = orders.reduce((sum, ord) => sum + (Number(ord.balance) || 0), 0);
 
   const activeOrders = orders.filter((o) => o.status !== 'delivered' && o.status !== 'cancelled');
-  const proStudios = businesses.filter((b) => (b.customer_slots_used || 0) > 100);
+  const subConfig = getSubscriptionConfig();
+  const proStudios = businesses.filter((b) => {
+    const override = subConfig.studioOverrides[b.id];
+    return override?.forceTier === 'pro' || (b.customer_slots_used || 0) > (override?.customCustomerLimit ?? subConfig.freeCustomerLimit);
+  });
 
   // Business ID to Business Name lookup map
   const businessMap = new Map<string, string>();
@@ -597,16 +602,26 @@ export const PlatformDashboardPage: React.FC = () => {
                     <span className="font-semibold text-xs text-white truncate max-w-[180px]">
                       {b.business_name}
                     </span>
-                    <Badge
-                      variant="outline"
-                      className={`text-[9px] font-mono ${
-                        (b.customer_slots_used || 0) > 100
-                          ? 'border-emerald-700 text-emerald-400'
-                          : 'border-neutral-700 text-neutral-400'
-                      }`}
-                    >
-                      {(b.customer_slots_used || 0) > 100 ? 'PRO' : 'FREE'}
-                    </Badge>
+                    {(() => {
+                      const override = subConfig.studioOverrides[b.id];
+                      const limit = override?.customCustomerLimit ?? subConfig.freeCustomerLimit;
+                      const isPro = override?.forceTier === 'pro' || (b.customer_slots_used || 0) > limit;
+                      const isBase = override?.forceTier === 'base';
+                      return (
+                        <Badge
+                          variant="outline"
+                          className={`text-[9px] font-mono ${
+                            isPro
+                              ? 'border-emerald-700 text-emerald-400'
+                              : isBase
+                              ? 'border-amber-700 text-amber-400'
+                              : 'border-neutral-700 text-neutral-400'
+                          }`}
+                        >
+                          {isPro ? 'PRO' : isBase ? 'BASE' : 'TRIAL'}
+                        </Badge>
+                      );
+                    })()}
                   </div>
 
                   <div className="text-[11px] text-neutral-400">

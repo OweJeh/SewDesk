@@ -27,6 +27,7 @@ export const StaffPage: React.FC = () => {
     members,
     invitations,
     hasActiveSubscription,
+    accessState,
     inviteStaff,
     cancelInvitation,
   } = useCurrentBusiness();
@@ -114,7 +115,7 @@ export const StaffPage: React.FC = () => {
           <div className="space-y-1">
             <p className="font-semibold">Free Tier Staff Limit Reached (3 of 3 seats allocated)</p>
             <p className="text-[11px] text-amber-700">
-              Your free starter plan includes up to 3 invited staff members. Upgrade to <strong>Pro Tailor Studio</strong> (GH₵ 150/mo) for unlimited team members and multi-user synchronization.
+              Your free starter plan includes up to 3 invited staff members. Upgrade to <strong>Pro Tailor Studio</strong> (GH₵ {accessState.proPrice}/mo) for unlimited team members and multi-user synchronization.
             </p>
           </div>
         </div>

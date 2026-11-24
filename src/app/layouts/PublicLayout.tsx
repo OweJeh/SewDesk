@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { ArrowRight, ShieldCheck, Zap, Menu, X } from 'lucide-react';
 import { ScrollToTop, BackToTopButton } from '@/components/common/ScrollToTop';
+import { useSubscriptionConfig } from '@/features/subscriptions/services/subscriptionConfig';
 
 export const PublicLayout: React.FC = () => {
   const { user } = useAuth();
   const location = useLocation();
+  const config = useSubscriptionConfig();
   const [showBanner, setShowBanner] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -43,7 +45,14 @@ export const PublicLayout: React.FC = () => {
       {/* Top Banner (Vanishes after 1 min) */}
       {showBanner && (
         <div className="bg-[#111111] text-white py-2 px-4 text-center text-xs font-medium flex items-center justify-center gap-2 transition-all duration-500 print:hidden">
-          <span>First 100 registered customers are 100% free for all tailoring studios.</span>
+          <span>
+            {config.trialType === 'trial_days'
+              ? `${config.freeTrialDays}-day free trial for all bespoke tailoring studios.`
+              : config.trialType === 'customer_quota'
+              ? `First ${config.freeCustomerLimit} registered clients free for all studios.`
+              : `First ${config.freeCustomerLimit} clients or ${config.freeTrialDays} days free for all studios.`}{' '}
+            Base Workspace from GH₵ {config.baseTierPriceGHS}/mo.
+          </span>
           <Link to="/register" className="underline font-semibold ml-1 hover:text-neutral-300">
             Claim workspace &rarr;
           </Link>

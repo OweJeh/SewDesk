@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import type { Business, Subscription } from '@/types';
 import { supabase, isSupabaseConfigured } from '@/lib/supabase/client';
 
@@ -11,13 +12,39 @@ export interface StudioOverride {
   notes?: string;
 }
 
+export const DEFAULT_BASE_FEATURES = [
+  'Unlimited registered customer profiles',
+  'Interactive measurement ruler & body dimensions',
+  'Workshop orders & production pipeline tracking',
+  'Up to 3 invited staff / tailor accounts',
+  'Offline-aware Dexie database & cloud backup',
+  'Customer history & records preserved',
+];
+
+export const DEFAULT_PRO_FEATURES = [
+  'Everything in Base Workspace tier',
+  'Unlimited custom measurement templates',
+  'Unlimited invited staff & team accounts',
+  'Fabric swatch & client posture photo vault',
+  'Automated WhatsApp fitting notices & dispatch',
+  'Piece-rate tailor commission payroll tracking',
+  'Digital measurement cards & printable QR slips',
+  'Advanced workshop revenue & ledger exports',
+  'Multi-device real-time cloud synchronization',
+];
+
 export interface PlatformSubscriptionConfig {
   trialType: TrialType;
-  freeCustomerLimit: number; // default e.g. 15 or 100, fully editable
-  freeTrialDays: number; // e.g. 14 days
+  freeCustomerLimit: number; // default e.g. 15, fully editable by admin
+  freeTrialDays: number; // e.g. 14 days, fully editable by admin
   baseTierPriceGHS: number; // 50 GHS per month
   proTierPriceGHS: number; // 150 GHS per month
   lockDataWhenExpired: boolean; // platform admin toggle: block stored data viewing when expired
+  trialDescription?: string;
+  baseDescription?: string;
+  proDescription?: string;
+  baseFeatures?: string[];
+  proFeatures?: string[];
   studioOverrides: Record<string, StudioOverride>;
   updatedAt: string;
 }
@@ -26,11 +53,16 @@ const STORAGE_KEY = 'sewdesk_platform_subscription_config';
 
 export const DEFAULT_SUBSCRIPTION_CONFIG: PlatformSubscriptionConfig = {
   trialType: 'both',
-  freeCustomerLimit: 15, // editable customer threshold (e.g. 15 as requested)
+  freeCustomerLimit: 15, // editable customer threshold
   freeTrialDays: 14,
   baseTierPriceGHS: 50, // 50 cedis per month standard usage
   proTierPriceGHS: 150, // 150 cedis per month pro features
   lockDataWhenExpired: true, // admin toggle to block stored data view upon expiry
+  trialDescription: 'Essential digital tailoring workspace with trial capacity.',
+  baseDescription: 'Full studio workflow with unlimited customer records.',
+  proDescription: 'Unlimited clients, photo vault, WhatsApp dispatch, custom templates, and team seats.',
+  baseFeatures: DEFAULT_BASE_FEATURES,
+  proFeatures: DEFAULT_PRO_FEATURES,
   studioOverrides: {},
   updatedAt: new Date().toISOString(),
 };
@@ -46,6 +78,8 @@ export const getSubscriptionConfig = (): PlatformSubscriptionConfig => {
     return {
       ...DEFAULT_SUBSCRIPTION_CONFIG,
       ...parsed,
+      baseFeatures: parsed.baseFeatures || DEFAULT_BASE_FEATURES,
+      proFeatures: parsed.proFeatures || DEFAULT_PRO_FEATURES,
       studioOverrides: parsed.studioOverrides || {},
     };
   } catch {
@@ -61,6 +95,8 @@ export const saveSubscriptionConfig = (
 ): PlatformSubscriptionConfig => {
   const updated = {
     ...config,
+    baseFeatures: config.baseFeatures || DEFAULT_BASE_FEATURES,
+    proFeatures: config.proFeatures || DEFAULT_PRO_FEATURES,
     updatedAt: new Date().toISOString(),
   };
   try {
@@ -271,6 +307,7 @@ export interface StudioAccessState {
   slotsUsed: number;
   maxSlots: number;
   trialDaysLeft: number | null;
+  freeTrialDays: number;
   expiresAt: string | null;
   basePrice: number;
   proPrice: number;
@@ -279,6 +316,12 @@ export interface StudioAccessState {
   isPro: boolean;
   isBase: boolean;
   trialType: TrialType;
+  lockDataWhenExpired: boolean;
+  trialDescription: string;
+  baseDescription: string;
+  proDescription: string;
+  baseFeatures: string[];
+  proFeatures: string[];
 }
 
 export const evaluateStudioAccess = (
@@ -286,6 +329,12 @@ export const evaluateStudioAccess = (
   subscription?: Subscription | null
 ): StudioAccessState => {
   const config = getSubscriptionConfig();
+
+  const trialDesc = config.trialDescription || DEFAULT_SUBSCRIPTION_CONFIG.trialDescription!;
+  const baseDesc = config.baseDescription || DEFAULT_SUBSCRIPTION_CONFIG.baseDescription!;
+  const proDesc = config.proDescription || DEFAULT_SUBSCRIPTION_CONFIG.proDescription!;
+  const baseFeats = config.baseFeatures && config.baseFeatures.length > 0 ? config.baseFeatures : DEFAULT_BASE_FEATURES;
+  const proFeats = config.proFeatures && config.proFeatures.length > 0 ? config.proFeatures : DEFAULT_PRO_FEATURES;
 
   if (!business) {
     return {
@@ -297,6 +346,7 @@ export const evaluateStudioAccess = (
       slotsUsed: 0,
       maxSlots: config.freeCustomerLimit,
       trialDaysLeft: config.freeTrialDays,
+      freeTrialDays: config.freeTrialDays,
       expiresAt: null,
       basePrice: config.baseTierPriceGHS,
       proPrice: config.proTierPriceGHS,
@@ -305,6 +355,12 @@ export const evaluateStudioAccess = (
       isPro: false,
       isBase: false,
       trialType: config.trialType,
+      lockDataWhenExpired: config.lockDataWhenExpired,
+      trialDescription: trialDesc,
+      baseDescription: baseDesc,
+      proDescription: proDesc,
+      baseFeatures: baseFeats,
+      proFeatures: proFeats,
     };
   }
 
@@ -388,6 +444,7 @@ export const evaluateStudioAccess = (
     slotsUsed,
     maxSlots,
     trialDaysLeft: tier === 'free_trial' ? trialDaysLeft : null,
+    freeTrialDays: config.freeTrialDays,
     expiresAt,
     basePrice: config.baseTierPriceGHS,
     proPrice: config.proTierPriceGHS,
@@ -396,5 +453,36 @@ export const evaluateStudioAccess = (
     isPro: tier === 'pro',
     isBase: tier === 'base',
     trialType: config.trialType,
+    lockDataWhenExpired: config.lockDataWhenExpired,
+    trialDescription: trialDesc,
+    baseDescription: baseDesc,
+    proDescription: proDesc,
+    baseFeatures: baseFeats,
+    proFeatures: proFeats,
   };
+};
+
+/**
+ * React hook to reactively subscribe to live platform subscription config changes.
+ */
+export const useSubscriptionConfig = (): PlatformSubscriptionConfig => {
+  const [config, setConfig] = useState<PlatformSubscriptionConfig>(getSubscriptionConfig);
+
+  useEffect(() => {
+    const handleUpdate = (e: Event) => {
+      const detail = (e as CustomEvent<PlatformSubscriptionConfig>).detail;
+      if (detail) {
+        setConfig(detail);
+      } else {
+        setConfig(getSubscriptionConfig());
+      }
+    };
+
+    window.addEventListener('sewdesk_subscription_config_changed', handleUpdate);
+    return () => {
+      window.removeEventListener('sewdesk_subscription_config_changed', handleUpdate);
+    };
+  }, []);
+
+  return config;
 };

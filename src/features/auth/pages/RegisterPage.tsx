@@ -5,10 +5,12 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/features/auth/context/AuthContext';
 import { ArrowRight, AlertCircle, Check } from 'lucide-react';
+import { useSubscriptionConfig } from '@/features/subscriptions/services/subscriptionConfig';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const config = useSubscriptionConfig();
 
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -60,7 +62,9 @@ export const RegisterPage: React.FC = () => {
           Start your digital tailoring workspace
         </h2>
         <p className="mt-2 text-xs text-[#777777]">
-          First 100 customer records free. No credit card required.
+          {config.trialType === 'trial_days'
+            ? `${config.freeTrialDays}-day free trial workspace. No credit card required.`
+            : `First ${config.freeCustomerLimit} client records free. No credit card required.`}
         </p>
       </div>
 

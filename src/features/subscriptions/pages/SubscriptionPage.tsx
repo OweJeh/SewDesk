@@ -3,6 +3,7 @@ import { useCurrentBusiness } from '@/features/businesses/context/BusinessContex
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Modal } from '@/components/ui/modal';
+import { SubscriptionPlanCards } from '@/features/subscriptions/components/SubscriptionPlanCards';
 import {
   CheckCircle2,
   ShieldCheck,
@@ -228,182 +229,12 @@ export const SubscriptionPage: React.FC = () => {
         )}
       </div>
 
-      {/* Plan Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* Free Trial */}
-        <div
-          className={`bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between border-2 ${
-            isFreeTrial ? 'border-black' : 'border-[#E5E5E5]'
-          }`}
-        >
-          <div>
-            <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
-              <h3 className="text-base font-bold text-black">Free Trial</h3>
-              {isFreeTrial && <Badge className="text-[9px]">Current Plan</Badge>}
-            </div>
-            <p className="text-xs text-[#777777] mb-4">Explore the full platform with limited capacity.</p>
-            <div className="mb-5">
-              <span className="text-2xl font-bold font-mono text-black">GH₵ 0</span>
-              <span className="text-xs text-[#777777] ml-1">/ month</span>
-            </div>
-            <ul className="space-y-2 text-xs text-neutral-700">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                Up to {maxSlots} customer profiles
-              </li>
-              <li className="flex items-center gap-2">
-                <Clock className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                {trialDaysLeft !== null ? `${trialDaysLeft} days remaining` : 'Time-limited trial'}
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                Full measurement &amp; order tools
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                Offline-first persistence
-              </li>
-            </ul>
-          </div>
-          <div className="mt-5 pt-4 border-t border-[#E5E5E5]">
-            <Button variant="outline" className="w-full text-xs" disabled>
-              {isFreeTrial ? 'Current Active Plan' : 'Trial Tier'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Base Plan */}
-        <div
-          className={`bg-white rounded-2xl p-5 shadow-sm flex flex-col justify-between border-2 ${
-            isBase ? 'border-black' : 'border-[#E5E5E5]'
-          }`}
-        >
-          <div>
-            <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
-              <h3 className="text-base font-bold text-black">Base Workspace</h3>
-              {isBase && <Badge className="text-[9px]">Current Plan</Badge>}
-            </div>
-            <p className="text-xs text-[#777777] mb-4">Full studio workflow with unlimited customers.</p>
-            <div className="mb-5">
-              <span className="text-2xl font-bold font-mono text-black">GH₵ {basePrice}</span>
-              <span className="text-xs text-[#777777] ml-1">/ month</span>
-            </div>
-            <ul className="space-y-2 text-xs text-neutral-700">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                <strong>Unlimited</strong>&nbsp;customer profiles
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                Full measurement &amp; order pipeline
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                Up to 3 invited staff accounts
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                Offline-first &amp; cloud sync
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-                Data preserved on expiry
-              </li>
-            </ul>
-          </div>
-          <div className="mt-5 pt-4 border-t border-[#E5E5E5]">
-            {isBase ? (
-              <Button
-                variant="outline"
-                className="w-full text-xs text-red-600 border-red-200 hover:bg-red-50"
-                onClick={handleCancel}
-                disabled={isProcessing}
-              >
-                Cancel Subscription
-              </Button>
-            ) : (
-              <Button
-                className="w-full text-xs bg-black text-white hover:bg-neutral-800 gap-1.5"
-                onClick={() => setUpgradeTarget('base')}
-                disabled={isPro}
-              >
-                <Zap className="w-3.5 h-3.5" />
-                {isPro ? 'Included in Pro' : `Activate — GH₵ ${basePrice}/mo`}
-              </Button>
-            )}
-          </div>
-        </div>
-
-        {/* Pro Plan */}
-        <div
-          className={`rounded-2xl p-5 shadow-sm flex flex-col justify-between border-2 ${
-            isPro ? 'bg-black border-black' : 'bg-white border-[#E5E5E5]'
-          }`}
-        >
-          <div>
-            <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
-              <h3 className={`text-base font-bold ${isPro ? 'text-white' : 'text-black'}`}>
-                Pro Atelier
-              </h3>
-              {isPro && (
-                <Badge className="text-[9px] bg-white text-black">Current Plan</Badge>
-              )}
-              {!isPro && (
-                <Badge variant="outline" className="text-[9px] border-neutral-300">
-                  <Star className="w-2.5 h-2.5 mr-0.5 inline" />
-                  Best Value
-                </Badge>
-              )}
-            </div>
-            <p className={`text-xs mb-4 ${isPro ? 'text-neutral-400' : 'text-[#777777]'}`}>
-              Unlimited everything — photos, templates, staff, and cloud sync.
-            </p>
-            <div className="mb-5">
-              <span className={`text-2xl font-bold font-mono ${isPro ? 'text-white' : 'text-black'}`}>
-                GH₵ {proPrice}
-              </span>
-              <span className={`text-xs ml-1 ${isPro ? 'text-neutral-400' : 'text-[#777777]'}`}>
-                / month
-              </span>
-            </div>
-            <ul className={`space-y-2 text-xs ${isPro ? 'text-neutral-300' : 'text-neutral-700'}`}>
-              {[
-                'Unlimited customers, templates & staff',
-                'Fabric swatch & client photo storage',
-                'WhatsApp fitting notices & sharing',
-                'Advanced revenue & ledger exports',
-                'Multi-device real-time sync',
-                'Priority support',
-              ].map((feat) => (
-                <li key={feat} className="flex items-center gap-2">
-                  <CheckCircle2 className={`w-3.5 h-3.5 shrink-0 ${isPro ? 'text-emerald-400' : 'text-black'}`} />
-                  {feat}
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="mt-5 pt-4 border-t border-neutral-800">
-            {isPro ? (
-              <Button
-                variant="outline"
-                className="w-full text-xs text-red-400 border-red-900 hover:bg-red-950 bg-transparent"
-                onClick={handleCancel}
-                disabled={isProcessing}
-              >
-                Cancel Subscription
-              </Button>
-            ) : (
-              <Button
-                className="w-full text-xs bg-black text-white hover:bg-neutral-800 gap-1.5"
-                onClick={() => setUpgradeTarget('pro')}
-              >
-                <Star className="w-3.5 h-3.5" />
-                Upgrade to Pro — GH₵ {proPrice}/mo
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Plan Cards - live from platform admin configuration */}
+      <SubscriptionPlanCards
+        onSelectPlan={(plan) => setUpgradeTarget(plan)}
+        onCancelPlan={handleCancel}
+        isProcessing={isProcessing}
+      />
 
       {/* Guarantees */}
       <div className="bg-white border border-[#E5E5E5] rounded-2xl p-5 sm:p-6 shadow-sm space-y-4">

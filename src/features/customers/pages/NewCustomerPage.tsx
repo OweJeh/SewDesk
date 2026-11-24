@@ -5,10 +5,10 @@ import { useAuth } from '@/features/auth/context/AuthContext';
 import { customerService } from '@/features/customers/services/customerService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, UserPlus, AlertCircle, Sparkles, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, UserPlus, AlertCircle, ShieldCheck } from 'lucide-react';
 
 export const NewCustomerPage: React.FC = () => {
-  const { currentBusiness, refreshBusiness } = useCurrentBusiness();
+  const { currentBusiness, refreshBusiness, accessState } = useCurrentBusiness();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -23,17 +23,16 @@ export const NewCustomerPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const slotsUsed = currentBusiness?.customer_slots_used ?? 0;
-  const isAllowanceExceeded = slotsUsed >= 100;
+  const { slotsUsed, maxSlots, canCreateCustomer, basePrice, proPrice, hasActiveSubscription } = accessState;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentBusiness || !user) return;
     setError(null);
 
-    if (isAllowanceExceeded) {
+    if (!canCreateCustomer) {
       setError(
-        'Free customer allowance limit (100) reached. An active paid subscription (GHS 150/mo) is required to register customer #101.'
+        `Customer allowance limit (${maxSlots}) reached. An active subscription (Base GH₵ ${basePrice}/mo or Pro GH₵ ${proPrice}/mo) is required to register new customer profiles.`
       );
       return;
     }
@@ -163,7 +162,7 @@ export const NewCustomerPage: React.FC = () => {
 
           <div className="pt-4 border-t border-[#E5E5E5] flex items-center justify-between">
             <span className="text-[11px] text-neutral-500 font-mono">
-              Slots: {slotsUsed} / 100 free
+              Slots: {hasActiveSubscription ? `${slotsUsed} (Unlimited)` : `${slotsUsed} / ${maxSlots} free`}
             </span>
 
             <div className="flex gap-2">

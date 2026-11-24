@@ -16,17 +16,17 @@ import {
   CreditCard,
   UserPlus,
   ArrowRight,
-  Sparkles,
   Clock,
   CheckCircle2,
   AlertTriangle,
   PackageCheck,
   TrendingUp,
   Plus,
+  Zap,
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
-  const { currentBusiness, currentRole } = useCurrentBusiness();
+  const { currentBusiness, currentRole, accessState } = useCurrentBusiness();
   const { profile } = useAuth();
   const navigate = useNavigate();
 
@@ -105,18 +105,24 @@ export const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Customer Allowance Banner */}
+      {/* Customer Allowance Banner - live from platform admin configuration */}
       <div className="bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl p-5">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
           <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-black" />
+            <Zap className="w-4 h-4 text-black" />
             <span className="text-xs font-bold text-black uppercase tracking-wider">
-              Free Customer Allowance
+              {accessState.hasActiveSubscription
+                ? `Workspace Plan: ${accessState.tierName}`
+                : 'Customer Allowance & Plan'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-sm font-bold font-mono text-black">
-              {slotsUsed} <span className="text-neutral-400 font-normal">/ 100</span>
+              {accessState.hasActiveSubscription ? (
+                <span>{slotsUsed} <span className="text-neutral-400 font-normal">(Unlimited)</span></span>
+              ) : (
+                <span>{slotsUsed} <span className="text-neutral-400 font-normal">/ {accessState.maxSlots}</span></span>
+              )}
             </span>
             <span className="text-[11px] text-neutral-500">records used</span>
           </div>
@@ -125,20 +131,40 @@ export const DashboardPage: React.FC = () => {
         <div className="w-full h-2 bg-neutral-200 rounded-full overflow-hidden">
           <div
             className={`h-full transition-all duration-300 ${
-              slotsUsed >= 100 ? 'bg-red-600' : slotsUsed >= 80 ? 'bg-amber-500' : 'bg-black'
+              accessState.hasActiveSubscription
+                ? 'bg-black'
+                : accessState.isAtCustomerLimit
+                ? 'bg-red-600'
+                : accessState.isNearCustomerLimit
+                ? 'bg-amber-500'
+                : 'bg-black'
             }`}
-            style={{ width: `${Math.min(100, (slotsUsed / 100) * 100)}%` }}
+            style={{
+              width: accessState.hasActiveSubscription
+                ? '100%'
+                : `${Math.min(100, (slotsUsed / Math.max(1, accessState.maxSlots)) * 100)}%`,
+            }}
           />
         </div>
 
-        <div className="flex items-center justify-between text-xs text-[#777777] mt-2">
-          <span>First 100 registered customers are 100% free forever.</span>
-          {slotsUsed >= 80 && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-xs text-[#777777] mt-2 gap-1">
+          <span>
+            {accessState.hasActiveSubscription
+              ? `Your atelier has unlimited client records and full tailoring features.`
+              : accessState.isAtCustomerLimit
+              ? `Trial quota of ${accessState.maxSlots} reached. Upgrade required for next client.`
+              : `Up to ${accessState.maxSlots} registered clients included in free trial.${
+                  accessState.trialDaysLeft !== null
+                    ? ` (${accessState.trialDaysLeft} trial days remaining)`
+                    : ''
+                }`}
+          </span>
+          {!accessState.hasActiveSubscription && (
             <Link
               to="/app/subscription"
-              className="text-black font-semibold underline hover:text-neutral-700"
+              className="text-black font-semibold underline hover:text-neutral-700 shrink-0"
             >
-              Upgrade to Pro (GHS 150/mo) &rarr;
+              Upgrade to Base (GH₵ {accessState.basePrice}) or Pro (GH₵ {accessState.proPrice}) &rarr;
             </Link>
           )}
         </div>

@@ -3,12 +3,12 @@ import { useCurrentBusiness } from '@/features/businesses/context/BusinessContex
 import { Modal } from '@/components/ui/modal';
 import { Button } from '@/components/ui/button';
 import {
-  Sparkles,
   CheckCircle2,
   Lock,
   Smartphone,
   CreditCard,
-  ArrowRight,
+  Zap,
+  Star,
   ShieldCheck,
 } from 'lucide-react';
 
@@ -27,16 +27,21 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
   featureDescription = 'Upgrade your atelier to Pro Tailor Studio to unlock full access to this feature and supercharge your workshop.',
   onContinueAnyway,
 }) => {
-  const { currentBusiness, activateSubscription } = useCurrentBusiness();
+  const { currentBusiness, accessState, activateProTier, activateBaseTier } = useCurrentBusiness();
+  const [selectedPlan, setSelectedPlan] = useState<'pro' | 'base'>('pro');
   const [paymentProvider, setPaymentProvider] = useState<'mtn' | 'telecel' | 'card'>('mtn');
   const [phoneOrCard, setPhoneOrCard] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const { basePrice, proPrice, proFeatures } = accessState;
+  const currentPrice = selectedPlan === 'pro' ? proPrice : basePrice;
+
   const handleUpgrade = async () => {
     setIsProcessing(true);
     setErrorMsg(null);
-    const { error } = await activateSubscription();
+    const { error } =
+      selectedPlan === 'pro' ? await activateProTier() : await activateBaseTier();
     setIsProcessing(false);
 
     if (error) {
@@ -50,17 +55,19 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title="Upgrade to Pro Tailor Studio"
+      title="Workshop Subscription Upgrade"
     >
       <div className="space-y-4 text-xs">
         {/* Feature highlight header */}
         <div className="p-4 rounded-xl bg-gradient-to-br from-neutral-900 to-black text-white space-y-2">
           <div className="flex items-center justify-between">
             <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-bold uppercase tracking-wider">
-              <Sparkles className="w-3 h-3 text-amber-300" />
-              Pro Feature Locked
+              <Zap className="w-3 h-3 text-amber-300" />
+              Pro Feature
             </span>
-            <span className="font-mono text-sm font-bold text-white">GH₵ 150 / mo</span>
+            <span className="font-mono text-sm font-bold text-white">
+              GH₵ {currentPrice} / mo
+            </span>
           </div>
           <div>
             <h4 className="text-sm font-bold text-white">{featureName}</h4>
@@ -70,38 +77,61 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
           </div>
         </div>
 
-        {/* Benefits quick list */}
-        <div className="p-3 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg space-y-1.5 text-neutral-700">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-            Included with Pro Tailor Studio:
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-              Fabric & Posture Photo Vault
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-              1-Click WhatsApp Dispatcher
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-              Garment Bag Tags & QR Slips
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-              Piece-Rate Commission Payroll
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-              Digital Measurement Cards
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
-              Fabric Yardage Estimator
-            </span>
-          </div>
+        {/* Plan Choice Selector */}
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={() => setSelectedPlan('pro')}
+            className={`p-3 rounded-xl border text-left transition-all ${
+              selectedPlan === 'pro'
+                ? 'border-black bg-black text-white shadow-sm'
+                : 'border-[#E5E5E5] bg-white text-neutral-800 hover:bg-neutral-50'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs">Pro Atelier</span>
+              <span className="font-mono text-xs font-semibold">GH₵ {proPrice}</span>
+            </div>
+            <p className={`text-[10px] mt-0.5 ${selectedPlan === 'pro' ? 'text-neutral-300' : 'text-neutral-500'}`}>
+              Full bespoke scale, photo vault &amp; tools
+            </p>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setSelectedPlan('base')}
+            className={`p-3 rounded-xl border text-left transition-all ${
+              selectedPlan === 'base'
+                ? 'border-black bg-black text-white shadow-sm'
+                : 'border-[#E5E5E5] bg-white text-neutral-800 hover:bg-neutral-50'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="font-bold text-xs">Base Workspace</span>
+              <span className="font-mono text-xs font-semibold">GH₵ {basePrice}</span>
+            </div>
+            <p className={`text-[10px] mt-0.5 ${selectedPlan === 'base' ? 'text-neutral-300' : 'text-neutral-500'}`}>
+              Unlimited customers &amp; order stages
+            </p>
+          </button>
         </div>
+
+        {/* Pro Benefits quick list */}
+        {selectedPlan === 'pro' && (
+          <div className="p-3 bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl space-y-1.5 text-neutral-700">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+              Included in Pro Atelier:
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+              {proFeatures.slice(0, 6).map((feat, idx) => (
+                <span key={idx} className="flex items-center gap-1.5 truncate">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-black shrink-0" />
+                  <span className="truncate">{feat}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Payment selector */}
         <div>
@@ -112,7 +142,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             <button
               type="button"
               onClick={() => setPaymentProvider('mtn')}
-              className={`p-2.5 rounded-lg border text-center transition-all ${
+              className={`p-2.5 rounded-xl border text-center transition-all ${
                 paymentProvider === 'mtn'
                   ? 'border-black bg-black text-white font-medium'
                   : 'border-[#E5E5E5] bg-white text-neutral-700 hover:bg-neutral-50'
@@ -125,7 +155,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             <button
               type="button"
               onClick={() => setPaymentProvider('telecel')}
-              className={`p-2.5 rounded-lg border text-center transition-all ${
+              className={`p-2.5 rounded-xl border text-center transition-all ${
                 paymentProvider === 'telecel'
                   ? 'border-black bg-black text-white font-medium'
                   : 'border-[#E5E5E5] bg-white text-neutral-700 hover:bg-neutral-50'
@@ -138,7 +168,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             <button
               type="button"
               onClick={() => setPaymentProvider('card')}
-              className={`p-2.5 rounded-lg border text-center transition-all ${
+              className={`p-2.5 rounded-xl border text-center transition-all ${
                 paymentProvider === 'card'
                   ? 'border-black bg-black text-white font-medium'
                   : 'border-[#E5E5E5] bg-white text-neutral-700 hover:bg-neutral-50'
@@ -159,7 +189,7 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             placeholder={paymentProvider === 'card' ? '4123 4567 8901 2345' : 'e.g. 024 123 4567'}
             value={phoneOrCard}
             onChange={(e) => setPhoneOrCard(e.target.value)}
-            className="w-full h-9 px-3 border border-[#E5E5E5] rounded-md text-xs focus:outline-none focus:border-black"
+            className="w-full h-9 px-3 border border-[#E5E5E5] rounded-xl text-xs focus:outline-none focus:border-black"
           />
         </div>
 
@@ -189,13 +219,14 @@ export const ProUpgradeModal: React.FC<ProUpgradeModalProps> = ({
             size="sm"
             onClick={handleUpgrade}
             isLoading={isProcessing}
-            leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+            disabled={!phoneOrCard.trim() || isProcessing}
+            className="bg-black text-white hover:bg-neutral-800 text-xs gap-1.5"
           >
-            Upgrade Now (GH₵ 150)
+            <Zap className="w-3.5 h-3.5" />
+            Activate {selectedPlan === 'pro' ? 'Pro' : 'Base'} (GH₵ {currentPrice}/mo)
           </Button>
         </div>
       </div>
     </Modal>
   );
 };
-

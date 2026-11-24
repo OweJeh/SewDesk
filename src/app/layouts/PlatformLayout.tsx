@@ -233,8 +233,8 @@ export const PlatformLayout: React.FC = () => {
         </div>
       )}
 
-      {/* Desktop Platform Operator Sidebar */}
-      <aside className="hidden md:flex w-64 bg-black border-r border-neutral-800 flex-col shrink-0 sticky top-0 h-screen overflow-y-auto">
+      {/* Desktop Platform Operator Sidebar - fixed to screen even when scrolled down */}
+      <aside className="hidden md:flex w-64 bg-black border-r border-neutral-800 flex-col shrink-0 fixed top-0 left-0 bottom-0 z-30 h-screen overflow-y-auto">
         <div className="p-5 border-b border-neutral-800 flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
@@ -306,10 +306,12 @@ export const PlatformLayout: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Platform Content */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
-        <Outlet />
-      </main>
+      {/* Main Platform Content - offset by fixed desktop sidebar */}
+      <div className="flex-1 flex flex-col min-w-0 md:pl-64">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 };

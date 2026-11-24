@@ -14,7 +14,6 @@ import {
   CreditCard,
   UserCheck,
   BarChart3,
-  Sparkles,
   Settings,
   Bell,
   LogOut,
@@ -37,7 +36,15 @@ import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 
 export const AppLayout: React.FC = () => {
   const { profile, logout, isPlatformAdmin, setDemoPlatformAdmin } = useAuth();
-  const { currentBusiness, currentRole, userBusinesses, switchBusiness, hasActiveSubscription, canCreateWorkspace } = useCurrentBusiness();
+  const {
+    currentBusiness,
+    currentRole,
+    userBusinesses,
+    switchBusiness,
+    hasActiveSubscription,
+    canCreateWorkspace,
+    accessState,
+  } = useCurrentBusiness();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -66,7 +73,7 @@ export const AppLayout: React.FC = () => {
     { label: 'Payments', path: '/app/payments', icon: CreditCard },
     { label: 'Staff', path: '/app/staff', icon: UserCheck },
     { label: 'Reports', path: '/app/reports', icon: BarChart3 },
-    { label: 'Subscription', path: '/app/subscription', icon: Sparkles },
+    { label: 'Subscription', path: '/app/subscription', icon: CreditCard },
     { label: 'Settings', path: '/app/settings', icon: Settings },
   ];
 
@@ -122,8 +129,8 @@ export const AppLayout: React.FC = () => {
       {/* Auto scroll-to-top on navigation */}
       <ScrollToTop />
 
-      {/* Sidebar for Desktop */}
-      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#E5E5E5] shrink-0 min-h-screen sticky top-0 h-screen overflow-y-auto print:hidden">
+      {/* Sidebar for Desktop - fixed on side pane so it shows even when scrolled down */}
+      <aside className="hidden md:flex flex-col w-64 bg-white border-r border-[#E5E5E5] shrink-0 fixed top-0 left-0 bottom-0 z-30 h-screen overflow-y-auto print:hidden">
         {/* Brand Header */}
         <div className="p-5 border-b border-[#E5E5E5]">
           <Logo showTagline size="sm" to="/app/dashboard" />
@@ -257,27 +264,51 @@ export const AppLayout: React.FC = () => {
           })}
         </nav>
 
-        {/* Customer Allowance Progress Box */}
-        <div className="p-3 mx-3 mb-3 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg">
-          <div className="flex items-center justify-between text-xs mb-1.5">
+        {/* Customer Allowance Progress Box - dynamic live from platform admin config */}
+        <div className="p-3 mx-3 mb-3 bg-[#FAFAFA] border border-[#E5E5E5] rounded-xl space-y-1.5">
+          <div className="flex items-center justify-between text-xs">
             <span className="font-semibold text-black">Customer Allowance</span>
-            <span className="font-mono text-[11px] text-[#777777]">{slotsUsed} / 100</span>
+            <span className="font-mono text-[11px] text-[#777777]">
+              {accessState.hasActiveSubscription
+                ? `${accessState.slotsUsed} (Unlimited)`
+                : `${accessState.slotsUsed} / ${accessState.maxSlots}`}
+            </span>
           </div>
           <div className="w-full h-1.5 bg-neutral-200 rounded-full overflow-hidden">
             <div
               className={`h-full transition-all duration-300 ${
-                isAtLimit ? 'bg-red-600' : isNearLimit ? 'bg-amber-500' : 'bg-black'
+                accessState.hasActiveSubscription
+                  ? 'bg-black'
+                  : accessState.isAtCustomerLimit
+                  ? 'bg-red-600'
+                  : accessState.isNearCustomerLimit
+                  ? 'bg-amber-500'
+                  : 'bg-black'
               }`}
-              style={{ width: `${Math.min(100, (slotsUsed / 100) * 100)}%` }}
+              style={{
+                width: accessState.hasActiveSubscription
+                  ? '100%'
+                  : `${Math.min(100, (accessState.slotsUsed / Math.max(1, accessState.maxSlots)) * 100)}%`,
+              }}
             />
           </div>
-          <p className="text-[10px] text-[#777777] mt-1.5">
-            {isAtLimit
-              ? 'Limit reached. Upgrade required for next customer.'
-              : isNearLimit
-              ? 'Approaching 100 free customer limit.'
-              : '100 free customer records included.'}
+          <p className="text-[10px] text-[#777777] leading-relaxed">
+            {accessState.hasActiveSubscription
+              ? `Unlimited capacity on ${accessState.tierName}.`
+              : accessState.isAtCustomerLimit
+              ? `Trial limit of ${accessState.maxSlots} reached. Upgrade required.`
+              : accessState.isNearCustomerLimit
+              ? `Approaching ${accessState.maxSlots} customer trial limit.`
+              : `${accessState.maxSlots} free customer records included.`}
           </p>
+          {!accessState.hasActiveSubscription && (
+            <Link
+              to="/app/subscription"
+              className="text-[10px] font-semibold text-black underline hover:text-neutral-700 block pt-0.5"
+            >
+              Upgrade Plan &rarr;
+            </Link>
+          )}
         </div>
 
         {/* Footer Profile Strip */}
@@ -303,8 +334,8 @@ export const AppLayout: React.FC = () => {
         </div>
       </aside>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main Content Area - padded left by w-64 to accommodate fixed desktop sidebar */}
+      <div className="flex-1 flex flex-col min-w-0 md:pl-64">
         {/* Top Header Bar */}
         <header className="sticky top-0 z-30 bg-white border-b border-[#E5E5E5] h-16 flex items-center justify-between px-4 sm:px-6 print:hidden">
           {/* Left: Mobile Toggle & Workspace Name */}
@@ -444,69 +475,126 @@ export const AppLayout: React.FC = () => {
           </div>
         </header>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Navigation Drawer - fixed overlay so it stays on screen at any scroll position */}
         {isMobileMenuOpen && (
-          <div className="md:hidden bg-white border-b border-[#E5E5E5] px-4 py-3 space-y-1 print:hidden">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname.startsWith(item.path);
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium ${
-                    isActive ? 'bg-black text-white' : 'text-neutral-700 hover:bg-neutral-100'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-            <div className="pt-2 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
-              Workshop Tools
-            </div>
-            {toolItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = location.pathname.startsWith(item.path);
-              const isDimmed = !hasActiveSubscription && item.pro;
+          <div
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden flex animate-in fade-in duration-150 print:hidden"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <div
+              className="w-4/5 max-w-xs h-full bg-white border-r border-[#E5E5E5] p-4 flex flex-col justify-between overflow-y-auto shadow-2xl animate-in slide-in-from-left duration-200"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div>
+                <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E5E5E5]">
+                  <Logo showTagline size="sm" to="/app/dashboard" />
+                  <button
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="p-1.5 text-neutral-500 hover:text-black rounded-lg hover:bg-neutral-100"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
 
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={(e) => {
-                    setIsMobileMenuOpen(false);
-                    if (isDimmed) {
-                      e.preventDefault();
-                      setProModalFeature({ name: item.label, path: item.path, desc: item.desc });
-                    }
-                  }}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-md text-xs font-medium ${
-                    isActive
-                      ? 'bg-black text-white'
-                      : isDimmed
-                      ? 'text-neutral-500 opacity-60 hover:opacity-100 hover:bg-neutral-100'
-                      : 'text-neutral-700 hover:bg-neutral-100'
-                  }`}
-                >
-                  <Icon className="w-4 h-4 shrink-0" />
-                  <span className="truncate">{item.label}</span>
-                  {item.pro && (
-                    <span
-                      className={`ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded shrink-0 ${
-                        hasActiveSubscription
-                          ? 'bg-neutral-100 text-neutral-700'
-                          : 'bg-black text-white'
-                      }`}
-                    >
-                      PRO
+                <div className="space-y-1">
+                  {navItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname.startsWith(item.path);
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-xs font-medium transition-colors ${
+                          isActive ? 'bg-black text-white' : 'text-neutral-700 hover:bg-neutral-100'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        <span>{item.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-3 pb-1 px-3 text-[10px] font-bold uppercase tracking-wider text-neutral-400">
+                  Workshop Tools
+                </div>
+                <div className="space-y-1">
+                  {toolItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname.startsWith(item.path);
+                    const isDimmed = !hasActiveSubscription && item.pro;
+
+                    return (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        onClick={(e) => {
+                          setIsMobileMenuOpen(false);
+                          if (isDimmed) {
+                            e.preventDefault();
+                            setProModalFeature({ name: item.label, path: item.path, desc: item.desc });
+                          }
+                        }}
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                          isActive
+                            ? 'bg-black text-white'
+                            : isDimmed
+                            ? 'text-neutral-500 opacity-60 hover:opacity-100 hover:bg-neutral-100'
+                            : 'text-neutral-700 hover:bg-neutral-100'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span className="truncate">{item.label}</span>
+                        {item.pro && (
+                          <span
+                            className={`ml-auto text-[9px] font-bold tracking-wider px-1.5 py-0.5 rounded shrink-0 ${
+                              hasActiveSubscription
+                                ? 'bg-neutral-100 text-neutral-700'
+                                : 'bg-black text-white'
+                            }`}
+                          >
+                            PRO
+                          </span>
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Drawer Bottom Allowance & Profile */}
+              <div className="pt-3 border-t border-[#E5E5E5] space-y-3 mt-4">
+                <div className="p-2.5 bg-[#FAFAFA] border border-[#E5E5E5] rounded-lg text-xs space-y-1">
+                  <div className="flex justify-between text-[11px] font-semibold text-black">
+                    <span>Allowance</span>
+                    <span className="font-mono">
+                      {accessState.hasActiveSubscription
+                        ? `${accessState.slotsUsed} (Unlimited)`
+                        : `${accessState.slotsUsed} / ${accessState.maxSlots}`}
                     </span>
-                  )}
-                </Link>
-              );
-            })}
+                  </div>
+                  <p className="text-[10px] text-neutral-500">
+                    {accessState.hasActiveSubscription
+                      ? `Active on ${accessState.tierName}`
+                      : `${accessState.maxSlots} clients in free trial`}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-neutral-600">
+                  <span className="truncate font-medium">{profile?.full_name || 'Staff User'}</span>
+                  <button
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleLogout();
+                    }}
+                    className="text-red-600 hover:text-red-700 text-xs font-semibold"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 

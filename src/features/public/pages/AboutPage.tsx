@@ -2,8 +2,10 @@ import React from 'react';
 import { Logo } from '@/components/ui/logo';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, ShieldCheck } from 'lucide-react';
+import { useSubscriptionConfig } from '@/features/subscriptions/services/subscriptionConfig';
 
 export const AboutPage: React.FC = () => {
+  const config = useSubscriptionConfig();
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 space-y-12">
       <div className="text-center space-y-4">
@@ -41,7 +43,7 @@ export const AboutPage: React.FC = () => {
           </li>
           <li className="flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-black shrink-0 mt-0.5" />
-            <span><strong>Generous Monetisation:</strong> The first 100 client registrations are 100% free forever for every studio, ensuring emerging tailors can build viable businesses without upfront barriers.</span>
+            <span><strong>Generous Monetisation:</strong> Start free with {config.freeCustomerLimit} client records, ensuring emerging tailors can build viable businesses without upfront barriers, then continue on Base (GH₵ {config.baseTierPriceGHS}/mo) or Pro (GH₵ {config.proTierPriceGHS}/mo).</span>
           </li>
         </ul>
       </div>
