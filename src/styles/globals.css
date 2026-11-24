@@ -104,3 +104,18 @@
   }
 }
 
+@keyframes rulerZoomFit {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.ruler-zoom-in {
+  animation: rulerZoomFit 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
