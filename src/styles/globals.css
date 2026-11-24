@@ -119,3 +119,21 @@
   animation: rulerZoomFit 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+.ruler-scroll-strip {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d4 transparent;
+}
+.ruler-scroll-strip::-webkit-scrollbar {
+  height: 4px;
+}
+.ruler-scroll-strip::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ruler-scroll-strip::-webkit-scrollbar-thumb {
+  background: #d4d4d4;
+  border-radius: 9999px;
+}
+.ruler-scroll-strip::-webkit-scrollbar-thumb:hover {
+  background: #a3a3a3;
+}
+

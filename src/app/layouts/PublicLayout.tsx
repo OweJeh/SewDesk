@@ -8,7 +8,7 @@ import { ScrollToTop, BackToTopButton } from '@/components/common/ScrollToTop';
 import { useSubscriptionConfig } from '@/features/subscriptions/services/subscriptionConfig';
 
 export const PublicLayout: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isPlatformAdmin } = useAuth();
   const location = useLocation();
   const config = useSubscriptionConfig();
   const [showBanner, setShowBanner] = useState(true);
@@ -179,7 +179,9 @@ export const PublicLayout: React.FC = () => {
                 <li><Link to="/register" className="hover:text-black transition-colors">Create Studio Account</Link></li>
                 <li><Link to="/login" className="hover:text-black transition-colors">Studio Sign In</Link></li>
                 <li><Link to="/about" className="hover:text-black transition-colors">About SewDesk</Link></li>
-                <li><Link to="/platform/dashboard" className="hover:text-black transition-colors text-neutral-400">Platform Admin</Link></li>
+                {isPlatformAdmin && (
+                  <li><Link to="/platform/dashboard" className="hover:text-black transition-colors text-neutral-400">Platform Admin</Link></li>
+                )}
               </ul>
             </div>
 

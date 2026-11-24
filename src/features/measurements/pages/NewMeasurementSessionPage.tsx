@@ -17,7 +17,6 @@ import {
   CheckCircle2,
   AlertCircle,
   RotateCcw,
-  Sparkles,
   ArrowLeft,
   LayoutGrid,
 } from 'lucide-react';
@@ -126,6 +125,19 @@ export const NewMeasurementSessionPage: React.FC = () => {
       });
       setAutosavedTime(new Date().toLocaleTimeString());
     }
+  };
+
+  // Template switch helper
+  const handleSelectTemplate = (tId: string) => {
+    setSelectedTemplateId(tId);
+    setCurrentFieldIndex(0);
+    let autoGarment = garmentType;
+    if (tId === 'trousers_only') autoGarment = 'Trousers';
+    else if (tId === 'shirt_kaftan_only') autoGarment = 'Shirt & Kaftan';
+    else if (tId === 'male_bespoke' && garmentType === 'Trousers') autoGarment = 'Bespoke Suit';
+    else if (tId === 'female_bespoke') autoGarment = 'Bespoke Dress';
+    else if (tId === 'children_bespoke') autoGarment = 'Children Formal Attire';
+    updateGarmentType(autoGarment);
   };
 
   // Unit switch conversion
@@ -292,17 +304,7 @@ export const NewMeasurementSessionPage: React.FC = () => {
           </label>
           <select
             value={selectedTemplateId}
-            onChange={(e) => {
-              const tId = e.target.value;
-              setSelectedTemplateId(tId);
-              setCurrentFieldIndex(0);
-              let autoGarment = garmentType;
-              if (tId === 'trousers_only') autoGarment = 'Trousers';
-              else if (tId === 'shirt_kaftan_only') autoGarment = 'Shirt & Kaftan';
-              else if (tId === 'male_bespoke' && garmentType === 'Trousers') autoGarment = 'Bespoke Suit';
-              else if (tId === 'female_bespoke') autoGarment = 'Bespoke Dress';
-              updateGarmentType(autoGarment);
-            }}
+            onChange={(e) => handleSelectTemplate(e.target.value)}
             className="flex h-11 w-full rounded-md border border-[#E5E5E5] bg-white px-3 py-2 text-xs text-[#111111] focus:border-black focus:outline-none"
           >
             {STANDARD_TEMPLATES.map((t) => (
@@ -379,6 +381,14 @@ export const NewMeasurementSessionPage: React.FC = () => {
                 }
               }}
               onDone={handleFinalSave}
+              templates={STANDARD_TEMPLATES}
+              selectedTemplateId={selectedTemplateId}
+              onSelectTemplate={handleSelectTemplate}
+              fields={fields}
+              fieldValues={fieldValues}
+              onSelectField={(idx) => setCurrentFieldIndex(idx)}
+              onUnitChange={handleUnitSwitch}
+              isSaving={isSaving}
             />
           </div>
 

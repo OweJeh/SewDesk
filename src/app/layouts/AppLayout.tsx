@@ -35,7 +35,7 @@ import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ProUpgradeModal } from '@/components/common/ProUpgradeModal';
 
 export const AppLayout: React.FC = () => {
-  const { profile, logout, isPlatformAdmin, setDemoPlatformAdmin } = useAuth();
+  const { profile, logout, isPlatformAdmin } = useAuth();
   const {
     currentBusiness,
     currentRole,
@@ -426,37 +426,22 @@ export const AppLayout: React.FC = () => {
                     Subscription & Allowance
                   </Link>
 
-                  {/* Platform Admin Switcher / Access */}
-                  <div className="border-t border-[#E5E5E5] my-1 pt-1">
-                    <Link
-                      to="/platform/dashboard"
-                      onClick={() => setIsProfileDropdownOpen(false)}
-                      className="block px-4 py-2 text-neutral-900 font-semibold hover:bg-neutral-100 flex items-center gap-1.5"
-                    >
-                      <Layers className="w-3.5 h-3.5 text-black" />
-                      <span>Platform Admin</span>
-                      {isPlatformAdmin ? (
+                  {/* Platform Admin Switcher (visible only to authorized platform admin) */}
+                  {isPlatformAdmin && (
+                    <div className="border-t border-[#E5E5E5] my-1 pt-1">
+                      <Link
+                        to="/platform/dashboard"
+                        onClick={() => setIsProfileDropdownOpen(false)}
+                        className="block px-4 py-2 text-neutral-900 font-semibold hover:bg-neutral-100 flex items-center gap-1.5"
+                      >
+                        <Layers className="w-3.5 h-3.5 text-black" />
+                        <span>Platform Admin</span>
                         <span className="ml-auto text-[9px] bg-black text-white px-1.5 py-0.5 rounded font-mono">
                           ADMIN
                         </span>
-                      ) : (
-                        <span className="ml-auto text-[9px] bg-neutral-200 text-neutral-700 px-1.5 py-0.5 rounded">
-                          LOCKED
-                        </span>
-                      )}
-                    </Link>
-
-                    {/* Developer toggle for test environment */}
-                    <button
-                      onClick={() => {
-                        setDemoPlatformAdmin(!isPlatformAdmin);
-                        setIsProfileDropdownOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-1.5 text-[10px] text-neutral-500 hover:bg-neutral-100"
-                    >
-                      {isPlatformAdmin ? '• Disable Admin Test Mode' : '• Enable Admin Test Mode'}
-                    </button>
-                  </div>
+                      </Link>
+                    </div>
+                  )}
 
                   <div className="border-t border-[#E5E5E5] mt-1 pt-1">
                     <button
