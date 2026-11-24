@@ -480,8 +480,11 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
       onKeyDown={handleKeyDown}
       className="fixed inset-0 z-[100] bg-white h-[100dvh] w-screen overflow-hidden overscroll-none select-none outline-none ruler-zoom-in"
     >
-      {/* Inner wrapper: strict flex column filling full screen */}
-      <div className="w-full h-full max-w-3xl mx-auto flex flex-col px-3 pt-2 pb-safe sm:px-5 sm:pt-3">
+      {/* Inner wrapper: strict flex column filling full screen, lifted off bottom home bar */}
+      <div
+        className="w-full h-full max-w-3xl mx-auto flex flex-col px-3.5 pt-2.5 sm:px-6 sm:pt-4"
+        style={{ paddingBottom: 'max(1.75rem, calc(env(safe-area-inset-bottom) + 1rem))' }}
+      >
 
         {/* ── A. Header ──────────────────────────────────────────── */}
         <div className="shrink-0 flex items-center justify-between gap-2 border-b border-[#E5E5E5] pb-2">
@@ -610,15 +613,16 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
           </div>
 
           {/* E. Ruler tape — bounded comfortable height */}
-          <TapeCanvas className="h-32 sm:h-36 shrink-0" />
+          <TapeCanvas className="h-28 sm:h-32 shrink-0" />
         </div>
 
-        {/* ── F. Navigation bar ─────────────────────────────────────── */}
-        <div className="shrink-0 border-t border-[#E5E5E5] pt-2 pb-1">
-          <div className="flex items-center justify-between gap-1.5">
+        {/* ── F–H. Unified Bottom Dock (lifted well above mobile home button) ── */}
+        <div className="shrink-0 bg-[#FAFAFA] border border-[#E5E5E5] rounded-2xl p-2.5 sm:p-3 space-y-2.5 shadow-sm">
+          {/* F. Navigation bar */}
+          <div className="flex items-center justify-between gap-2">
             <Button type="button" variant="outline" size="sm" disabled={currentIndex === 0} onClick={onPrev}
               leftIcon={<ChevronLeft className="w-4 h-4" />}
-              className="text-xs px-2 sm:px-3 h-9 sm:h-10">
+              className="text-xs sm:text-sm font-semibold px-3 sm:px-4 h-11 rounded-xl bg-white">
               <span className="hidden sm:inline">Previous</span>
               <span className="sm:hidden">Prev</span>
             </Button>
@@ -626,17 +630,17 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
             {onSkip && (
               <Button type="button" variant="ghost" size="sm" onClick={onSkip}
                 leftIcon={<SkipForward className="w-4 h-4" />}
-                className="text-xs px-2 sm:px-3 h-9 sm:h-10">
+                className="text-xs sm:text-sm font-semibold px-3 sm:px-4 h-11 rounded-xl">
                 Skip
               </Button>
             )}
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-2">
               <Button type="button"
                 variant={isLast ? 'outline' : 'primary'} size="sm"
                 disabled={isLast} onClick={onNext}
                 rightIcon={<ChevronRight className="w-4 h-4" />}
-                className="text-xs px-2.5 sm:px-4 h-9 sm:h-10">
+                className={`text-xs sm:text-sm font-semibold px-3.5 sm:px-5 h-11 rounded-xl ${isLast ? 'bg-white' : ''}`}>
                 Next
               </Button>
               {onDone && (
@@ -645,53 +649,51 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
                   isLoading={isSaving}
                   onClick={() => { setIsMaximized(false); onDone(); }}
                   leftIcon={<Check className="w-4 h-4" />}
-                  className="text-xs px-2.5 sm:px-4 h-9 sm:h-10">
+                  className={`text-xs sm:text-sm font-semibold px-3.5 sm:px-5 h-11 rounded-xl ${!isLast ? 'bg-white' : ''}`}>
                   <span className="hidden sm:inline">Save Set</span>
                   <span className="sm:hidden">Save</span>
                 </Button>
               )}
             </div>
           </div>
-        </div>
 
-        {/* ── G. Template selector row (maximized only) ─────────────── */}
-        {templates && templates.length > 0 && onSelectTemplate && (
-          <div className="shrink-0 border-t border-neutral-100 pt-1.5 pb-0.5">
-            <div className="flex items-center gap-2">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">Template</span>
-              <div
-                onWheel={handleHorizontalWheel}
-                className="ruler-scroll-strip flex items-center gap-1.5 overflow-x-auto touch-pan-x flex-1"
-              >
-                {templates.map((t) => {
-                  const isActive = t.id === selectedTemplateId;
-                  return (
-                    <button
-                      key={t.id}
-                      ref={isActive ? activeTemplateChipRef : undefined}
-                      type="button"
-                      onClick={() => onSelectTemplate(t.id)}
-                      className={`shrink-0 px-2.5 py-1 rounded-lg border text-[10px] sm:text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap ${
-                        isActive
-                          ? 'bg-black text-white border-black shadow-sm'
-                          : 'bg-[#FAFAFA] text-neutral-700 border-[#E5E5E5] hover:border-neutral-400 hover:bg-neutral-100'
-                      }`}
-                    >
-                      {t.name} ({t.fields.length})
-                    </button>
-                  );
-                })}
+          {/* G. Template selector row */}
+          {templates && templates.length > 0 && onSelectTemplate && (
+            <div className="border-t border-[#E5E5E5] pt-2">
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 shrink-0">Template</span>
+                <div
+                  onWheel={handleHorizontalWheel}
+                  className="ruler-scroll-strip flex items-center gap-1.5 overflow-x-auto touch-pan-x flex-1"
+                >
+                  {templates.map((t) => {
+                    const isActive = t.id === selectedTemplateId;
+                    return (
+                      <button
+                        key={t.id}
+                        ref={isActive ? activeTemplateChipRef : undefined}
+                        type="button"
+                        onClick={() => onSelectTemplate(t.id)}
+                        className={`shrink-0 px-3 py-1.5 rounded-xl border text-[11px] sm:text-xs font-semibold transition-all cursor-pointer whitespace-nowrap ${
+                          isActive
+                            ? 'bg-black text-white border-black shadow-sm'
+                            : 'bg-white text-neutral-700 border-[#E5E5E5] hover:border-neutral-400 hover:bg-neutral-100'
+                        }`}
+                      >
+                        {t.name} ({t.fields.length})
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ── H. Field chips row (maximized only) ───────────────────── */}
-        {fields && fields.length > 0 && onSelectField && (
-          <div className="shrink-0 pb-2">
+          {/* H. Field chips row */}
+          {fields && fields.length > 0 && onSelectField && (
             <div
               onWheel={handleHorizontalWheel}
-              className="ruler-scroll-strip flex items-center gap-1.5 overflow-x-auto touch-pan-x"
+              className="ruler-scroll-strip flex items-center gap-2 overflow-x-auto touch-pan-x pt-0.5"
             >
               {fields.map((f, idx) => {
                 const isActive = idx === currentIndex;
@@ -702,24 +704,24 @@ export const InteractiveRulerPicker: React.FC<InteractiveRulerPickerProps> = ({
                     ref={isActive ? activeFieldChipRef : undefined}
                     type="button"
                     onClick={() => onSelectField(idx)}
-                    className={`shrink-0 px-2.5 py-1.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col min-w-[86px] sm:min-w-[106px] ${
+                    className={`shrink-0 px-3 py-2 rounded-xl border text-left transition-all cursor-pointer flex flex-col min-w-[96px] sm:min-w-[116px] ${
                       isActive
                         ? 'bg-black text-white border-black shadow-md ring-2 ring-black/15'
-                        : 'bg-[#FAFAFA] text-neutral-800 border-[#E5E5E5] hover:border-neutral-400 hover:bg-neutral-100'
+                        : 'bg-white text-neutral-800 border-[#E5E5E5] hover:border-neutral-400 hover:bg-neutral-100'
                     }`}
                   >
-                    <span className={`text-[9px] sm:text-[10px] font-semibold truncate max-w-[120px] ${isActive ? 'text-white' : 'text-neutral-600'}`}>
+                    <span className={`text-[10px] sm:text-[11px] font-semibold truncate max-w-[125px] ${isActive ? 'text-white' : 'text-neutral-600'}`}>
                       {idx + 1}. {f.name}
                     </span>
-                    <span className={`text-[11px] sm:text-xs font-mono font-bold mt-0.5 ${isActive ? 'text-neutral-200' : 'text-black'}`}>
+                    <span className={`text-xs sm:text-sm font-mono font-bold mt-0.5 ${isActive ? 'text-neutral-200' : 'text-black'}`}>
                       {pointVal.toFixed(1)} {unit}
                     </span>
                   </button>
                 );
               })}
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
       </div>
     </div>
